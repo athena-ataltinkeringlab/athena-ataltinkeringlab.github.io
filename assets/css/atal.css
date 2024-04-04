@@ -1100,7 +1100,7 @@ section.resources-facilities .categories .main-button-red a {
     position: absolute;
     top: 120px; /* Adjust as needed */
     right: 40px; /* Adjust as needed */
-    z-index: 9999; /* Ensure logo appears above other content */
+    z-index: 1; /* Ensure logo appears above other content */
 }
 
 .logo-container img {
