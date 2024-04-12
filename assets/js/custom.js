@@ -277,44 +277,6 @@
     }
 
 
-
-       // Function to get unique hit count from localStorage
-        function getUniqueHitCount() {
-            let uniqueHits = localStorage.getItem('uniqueHits');
-            return uniqueHits ? parseInt(uniqueHits) : 0;
-        }
-
-        // Function to set unique hit count to localStorage
-        function setUniqueHitCount(count) {
-            localStorage.setItem('uniqueHits', count);
-        }
-
-        // Function to update counter value on page
-        function updateCounter() {
-            let count = getUniqueHitCount().toString().padStart(5, '0').split('');
-            let digits = document.querySelectorAll('.digit');
-            digits.forEach((digit, index) => {
-                let newDigit = count[index];
-                if (digit.textContent !== newDigit) {
-                    digit.textContent = newDigit;
-                    digit.classList.add('increment-animation');
-                    setTimeout(() => {
-                        digit.classList.remove('increment-animation');
-                    }, 500); // Remove animation class after animation duration
-                }
-            });
-        }
-
-        // Function to handle page load
-        window.onload = function() {
-            let count = getUniqueHitCount();
-            setUniqueHitCount(count + 1); // Increment unique hit count
-            updateCounter(); // Update counter value on page
-        };
-
-
-
-
 	function visible(partial) {
         var $t = partial,
             $w = jQuery(window),
