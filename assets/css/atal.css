@@ -1378,6 +1378,12 @@ section.our-facts h2 {
   margin-left: 3px;
 }
 
+.plusymbol .count-digit:after {
+  content: '+';
+  margin-left: 3px;
+}
+
+
 .count-digit {
     margin: 5px 0px;
     color: #f5a425;
