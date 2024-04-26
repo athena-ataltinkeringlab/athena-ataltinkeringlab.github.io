@@ -211,7 +211,7 @@ header
 .sub-header .left-content p {
   color: #fff;
   padding: 8px 0px;
-  font-size: 13px;
+  font-size: 16px;
 }
 
 .sub-header .right-icons {
@@ -1108,6 +1108,7 @@ section.resources-facilities .categories .main-button-red a {
     width: 160px; /* Adjust width as needed */
     height: auto; /* Maintain aspect ratio */
 }
+
 
 /*
 ---------------------------------------------
