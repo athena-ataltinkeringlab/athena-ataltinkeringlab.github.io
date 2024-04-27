@@ -1083,6 +1083,28 @@ section.resources-facilities .categories .main-button-red a {
     .orange-text {
     color: orange;
   }
+
+
+/* Link Styles */
+a {
+  font-weight: bold; /* Add this line to make the link text bold */
+  color: green; /* Set default color to green */
+  text-decoration: none; /* Remove underline */
+}
+
+/* Link Hover Styles */
+a:hover {
+  color: red; /* Change hover color to red */
+}
+
+/* Link Active Styles (when touched) */
+a:active {
+  font-size: 16px;
+  color: #ff6600;
+}
+
+/* Link Styles */
+
  
 /* Media query for mobile devices */
 @media screen and (max-width: 768px) {
