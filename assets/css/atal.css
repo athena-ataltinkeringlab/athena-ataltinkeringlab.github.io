@@ -1168,6 +1168,10 @@ a:active {
     height: auto; /* Maintain aspect ratio */
 }
 
+.bullet-color {
+    color: #3498db; /* Change 'red' to the desired color */
+}
+
 /*
 ---------------------------------------------
 apply now
