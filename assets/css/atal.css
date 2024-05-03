@@ -1141,6 +1141,50 @@ a:active {
   margin-left: 10px; /* Remove margin */
 }
 
+/* Styles for the news section */
+.news-section-2 {
+  background-color: transparent; /* Make background transparent */
+  margin-top: -30px; /* Move the section up a bit */
+  padding: 60px 0; /* Add padding */
+  text-align: center; /* Center align content */
+}
+
+.news-box-2 {
+  position: absolute; /* Position the box */
+  top: 950px; /* Adjust the top position */
+  left: 50%; /* Move the box to the center horizontally */
+  transform: translateX(-50%); /* Adjust for center alignment */
+  border: 2px solid #e09316; /* Blue border for the box */
+  padding: 10px; /* Add padding */
+  border-radius: 10px; /* Rounded corners */
+  width: 80%; /* Adjust the width */
+  height: 25%;
+}
+
+
+/* Styles for the news caption */
+.news-caption-2 {
+  font-size: 20px; /* Increase font size */
+  color: #fff; /* Blue color for the text */
+  font-weight: bold; /* Make text bold */
+  display: block; /* Display as block */
+  margin: -11px -12px 0; /* Remove default margin and extend to touch the box */
+  padding: 10px 15px; /* Add padding (10px top/bottom, 15px left/right) */
+  background-color: #e09316; /* Background color */
+  border-top-left-radius: 10px; /* Round top left corner */
+  border-top-right-radius: 10px; /* Round top right corner */
+}
+
+/* Styles for the scrolling news */
+.scrolling-news-2 {
+  font-size: 16px; /* Adjust font size as needed */
+  color: #fff; /* White color for the text */
+  overflow: hidden;
+  width: 100%; /* Extend text lines to fill the entire width */
+  max-height: 200px; /* Adjust the maximum height */
+  margin-left: 10px; /* Remove margin */
+}
+
 
 
  
@@ -1152,7 +1196,18 @@ a:active {
   
   .split-table-container table {
     width: 100%; /* Make tables occupy full width in mobile devices */
+  } 
+  
+  .news-box-2 {
+	top: 1200px; /* Adjust the top position */
+	height: 30%;
   }
+  
+  .scrolling-news-2 {
+    max-height: 150px; /* Adjust the maximum height */
+
+}
+
 }
 
 
@@ -1660,7 +1715,7 @@ section.meetings-page {
   background-attachment: fixed;
   background-repeat: no-repeat;
   background-size: cover;
-  padding-top: 180px;
+  padding-top: 360px;
   padding-bottom: 0px;
 }
 
