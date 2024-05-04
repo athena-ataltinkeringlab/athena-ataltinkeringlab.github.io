@@ -1172,7 +1172,25 @@ a:active {
   margin-left: 10px; /* Remove margin */
 }
 
+#particles-js {
+  position: absolute; /* Position the particles container */
+  background-color: transparent; /
+  top: 0; /* Position it at the top of the section */
+  left: 0; /* Position it at the left of the section */
+  width: 100%; /* Make it cover the entire width */
+  height: 100%; /* Make it cover the entire height */
+  z-index: 1; /* Set the z-index to be behind other content */
+}
 
+.particles-js{
+  width: 100%;
+  height: 100%;
+  background-color: #b61924;
+  background-image: url('');
+  background-size: cover;
+  background-position: 50% 50%;
+  background-repeat: no-repeat;
+}
  
 /* Media query for mobile devices */
 @media screen and (max-width: 768px) {
@@ -1196,6 +1214,10 @@ a:active {
   .meeting-single-item {
     margin-top: 80px; /* Adjust the top margin as needed */
     margin-bottom: 10px; /* Adjust the bottom margin as needed */
+  }
+  
+#particles-js {
+    height: 220%; /* Make it cover the entire height */
   }
 
 }
