@@ -391,13 +391,7 @@ CHIDAMBARAM
   </section>
 
   <section class="contact-us" id="contact">
-     <div class="counter-container">
-        <div class="digit">0</div>
-        <div class="digit">0</div>
-        <div class="digit">0</div>
-        <div class="digit">0</div>
-        <div class="digit">0</div>
-    </div>
+ 
     <div class="footer">
       <p>Copyright © 2024 <em class="orange-text">ATHENA</em> ATAL TINKERING LAB. <br> All Rights Reserved. 
     </div>
@@ -416,46 +410,6 @@ CHIDAMBARAM
     <script src="assets/js/slick-slider.js"></script>
     <script src="assets/js/custom.js"></script>
     <script>
-	        // Function to get unique hit count from a text file
-        async function getUniqueHitCount() {
-            const response = await fetch('assets/count.txt');
-            const text = await response.text();
-            return text ? parseInt(text) : 0;
-        }
-
-        // Function to set unique hit count to a text file
-        async function setUniqueHitCount(count) {
-            const blob = new Blob([count], { type: 'text/plain' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.getElementById('downloadLink');
-            a.href = url;
-            a.style.display = 'block';
-        }
-
-        // Function to update counter value on page
-        function updateCounter() {
-            getUniqueHitCount().then(count => {
-                let countString = count.toString().padStart(5, '0');
-                let digits = document.querySelectorAll('.digit');
-                digits.forEach((digit, index) => {
-                    let newDigit = countString[index];
-                    if (digit.textContent !== newDigit) {
-                        digit.textContent = newDigit;
-                        digit.classList.add('increment-animation');
-                        setTimeout(() => {
-                            digit.classList.remove('increment-animation');
-                        }, 500); // Remove animation class after animation duration
-                    }
-                });
-            });
-        }
-
-        // Function to handle page load
-        window.onload = async function() {
-            let count = await getUniqueHitCount();
-            await setUniqueHitCount(count + 1); // Increment unique hit count and update file
-            updateCounter(); // Update counter value on page
-        };
         //according to loftblog tut
         $('.nav li:first').addClass('active');
 
