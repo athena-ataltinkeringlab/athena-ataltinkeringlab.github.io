@@ -963,12 +963,7 @@ section.resources-facilities .categories .main-button-red a {
   top: 20px;
 }
 
-@media only screen and (max-width: 768px) {
-  .meeting-single-item {
-    margin-top: 250px; /* Adjust the top margin as needed */
-    margin-bottom: 10px; /* Adjust the bottom margin as needed */
-  }
-}
+
 
 .meeting-item .thumb .price span {
   font-size: 16px;
@@ -1141,6 +1136,41 @@ a:active {
   margin-left: 10px; /* Remove margin */
 }
 
+.news-section-2 {
+  background-color: transparent; /* Make background transparent */
+  margin-top: -30px; /* Move the section up a bit */
+  padding: 20px 0; /* Add padding */
+  text-align: center; /* Center align content */
+}
+
+.news-box-2 {
+  border: 2px solid #3498db; /* Blue border for the box */
+  padding: 10px; /* Add padding */
+  border-radius: 10px; /* Rounded corners */
+  display: inline-block; /* Display as inline block */
+  width: 80%; /* Adjust the width */
+}
+
+.news-caption-2 {
+  font-size: 20px; /* Increase font size */
+  color: #fff; /* White color for the text */
+  font-weight: bold; /* Make text bold */
+  display: inline-block; /* Display as inline block */
+  margin-bottom: 10px; /* Add space below the caption */
+  background-color: #3498db; /* Blue background color for the caption */
+  padding: 5px 10px; /* Add padding */
+  border-radius: 5px; /* Rounded corners */
+}
+
+
+.scrolling-news-2 {
+  font-size: 16px; /* Adjust font size as needed */
+  color: #fff; /* White color for the text */
+  overflow: hidden;
+  width: 100%; /* Extend text lines to fill the entire width */
+  max-height: 200px; /* Adjust the maximum height */
+  margin-left: 10px; /* Remove margin */
+}
 
 
  
@@ -1153,7 +1183,24 @@ a:active {
   .split-table-container table {
     width: 100%; /* Make tables occupy full width in mobile devices */
   }
+  
+  .news-box-2 {
+    border: 2px solid #3498db; /* Blue border for the box */
+    padding: 10px; /* Add padding */
+    border-radius: 10px; /* Rounded corners */
+    width: 80%; /* Adjust the width */
+    margin-top: 220px; /* Add margin to push it below */
+
+  }
+  
+  .meeting-single-item {
+    margin-top: 80px; /* Adjust the top margin as needed */
+    margin-bottom: 10px; /* Adjust the bottom margin as needed */
+  }
+
 }
+
+
 
 
 .logo-container {
@@ -1654,13 +1701,23 @@ upcoming meetings page
 ---------------------------------------------
 */
 
-section.meetings-page {
+section.meetings-page-2 {
   background-image: url(../images/meetings-page-bg.jpg);
   background-position: center center;
   background-attachment: fixed;
   background-repeat: no-repeat;
   background-size: cover;
   padding-top: 180px;
+  padding-bottom: 0px;
+}
+
+section.meetings-page {
+  background-image: url(../images/meetings-page-bg.jpg);
+  background-position: center center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-size: cover;
+  padding-top: 10px;
   padding-bottom: 0px;
 }
 
