@@ -1182,6 +1182,10 @@ a:active {
   z-index: 1; /* Set the z-index to be behind other content */
 }
 
+#particles-js {
+  pointer-events: none;
+}
+
 .particles-js{
   width: 100%;
   height: 100%;
