@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Athena Global School QR Generator</title>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+
+<style>
+body{
+font-family:Arial;
+background:#eef2f7;
+text-align:center;
+padding:40px;
+}
+
+.container{
+background:white;
+padding:30px;
+width:420px;
+margin:auto;
+border-radius:10px;
+box-shadow:0 0 10px rgba(0,0,0,0.2);
+}
+
+input{
+width:90%;
+padding:10px;
+margin:8px;
+border-radius:5px;
+border:1px solid #ccc;
+}
+
+textarea{
+width:90%;
+height:80px;
+padding:10px;
+margin:8px;
+border-radius:5px;
+border:1px solid #ccc;
+font-family:monospace;
+font-size:11px;
+resize:vertical;
+}
+
+button{
+padding:10px 20px;
+background:#1a3d7c;
+color:white;
+border:none;
+border-radius:5px;
+cursor:pointer;
+margin:6px;
+}
+
+canvas{
+margin-top:20px;
+border:1px solid #ddd;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>ATHENA GLOBAL SCHOOL</h2>
+<h3>QR Code Generator</h3>
+
+<input type="text" id="link" placeholder="Enter URL" value="https://athenaglobalschool.com">
+
+<br>
+
+<label>QR Color</label><br>
+<input type="color" id="fg" value="#000000">
+
+<br>
+
+<label>Background</label><br>
+<input type="color" id="bg" value="#ffffff">
+
+<br>
+
+<label>Base64 Logo (Paste here)</label><br>
+<textarea id="logoBase64" placeholder="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA... (paste your base64 image)"></textarea>
+
+<br>
+
+<button onclick="generateQR()">Generate QR</button>
+<button onclick="downloadQR()">Download QR</button>
+
+<br><br>
+
+<canvas id="qrCanvas"></canvas>
+
+</div>
+
+<script>
+
+function generateQR(){
+    let link = document.getElementById("link").value;
+    let fg = document.getElementById("fg").value;
+    let bg = document.getElementById("bg").value;
+    let logoBase64 = document.getElementById("logoBase64").value.trim();
+    let canvas = document.getElementById("qrCanvas");
+
+    if (!link) {
+        alert("Please enter a URL");
+        return;
+    }
+
+    // Clear canvas first
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    QRCode.toCanvas(canvas, link, {
+        width: 260,
+        margin: 1,
+        color: {
+            dark: fg,
+            light: bg
+        }
+    }, function(error) {
+        if (error) {
+            console.error(error);
+            return;
+        }
+
+        // Add logo if provided
+        if (logoBase64) {
+            addLogoToQR(canvas, logoBase64);
+        } else {
+            addDefaultLogo(canvas);
+        }
+    });
+}
+
+function addLogoToQR(canvas, base64Data) {
+    const ctx = canvas.getContext("2d");
+    const logo = new Image();
+    
+    logo.src = base64Data;
+
+    logo.onload = function() {
+        const logoSize = 60;
+        const x = (canvas.width - logoSize) / 2;
+        const y = (canvas.height - logoSize) / 2;
+
+        // Draw white circle background
+        ctx.beginPath();
+        ctx.arc(x + logoSize/2, y + logoSize/2, logoSize/2 + 2, 0, 2 * Math.PI);
+        ctx.fillStyle = "#ffffff";
+        ctx.fill();
+        ctx.strokeStyle = "#e0e0e0";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Draw base64 logo
+        ctx.drawImage(logo, x + 4, y + 4, logoSize - 8, logoSize - 8);
+    };
+
+    logo.onerror = function() {
+        console.error("Failed to load base64 logo");
+        addDefaultLogo(canvas);
+    };
+}
+
+function addDefaultLogo(canvas) {
+    const ctx = canvas.getContext("2d");
+    const x = (canvas.width - 80) / 2;
+    const y = (canvas.height - 40) / 2;
+    
+    ctx.fillStyle = "#1a3d7c";
+    ctx.font = "bold 18px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("ATHENA", x + 40, y + 8);
+    ctx.font = "12px Arial";
+    ctx.fillText("GLOBAL", x + 40, y + 25);
+    ctx.font = "bold 10px Arial";
+    ctx.fillText("SCHOOL", x + 40, y + 38);
+}
+
+function downloadQR(){
+    let canvas = document.getElementById("qrCanvas");
+
+    if(canvas.width === 0 || !canvas.getContext){
+        alert("Please generate QR first");
+        return;
+    }
+
+    let image = canvas.toDataURL("image/png");
+    let a = document.createElement("a");
+    a.href = image;
+    a.download = "athena_qr.png";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
+</script>
+
+</body>
+</html>
