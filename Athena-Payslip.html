@@ -597,6 +597,9 @@ input[type="file"]:focus {
     <button onclick="processExcel()">Preview</button>
     <button onclick="downloadAll()">Download PDFs</button>
     <button onclick="sendAllEmails()">Send Emails</button>
+	<button onclick="resetPage()" style="font-size: 11px; padding: 4px 10px;">
+  Reset
+</button>
   </div>
 </div>
 
@@ -991,6 +994,28 @@ async function sendAllEmails() {
   }
 
   alert(`Emails finished for ${month} ${year}.\nSent: ${successCount}\nFailed: ${failureCount}`);
+}
+
+function resetPage() {
+  // Clear file input
+  const fileInput = document.getElementById('excelFile');
+  if (fileInput) fileInput.value = '';  // clears chosen file[web:134]
+
+  // Reset dropdowns
+  const monthSel = document.getElementById('monthSelect');
+  const yearSel  = document.getElementById('yearSelect');
+  const locSel   = document.getElementById('locationSelect');
+
+  if (monthSel) monthSel.selectedIndex = 0;
+  if (yearSel)  yearSel.selectedIndex  = 0;
+  if (locSel)   locSel.selectedIndex   = 0;
+
+  // Clear employees array and UI
+  employees = [];
+  const preview   = document.getElementById('preview');
+  const statusDiv = document.getElementById('emailStatus');
+  if (preview)   preview.innerHTML = '';
+  if (statusDiv) statusDiv.innerHTML = '';
 }
 </script>
 
