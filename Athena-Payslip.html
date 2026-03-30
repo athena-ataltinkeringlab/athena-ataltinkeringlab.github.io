@@ -888,10 +888,17 @@ async function sendAllEmails() {
     return;
   }
 
+  // simple confirmation dialog
   const month = document.getElementById('monthSelect').value;
-  const year = document.getElementById('yearSelect').value;
-  const branchSelect = document.getElementById('locationSelect');
-  const branch = branchSelect ? branchSelect.value.toLowerCase() : 'chennai';
+  const year  = document.getElementById('yearSelect').value;
+  const branchText = document.getElementById('locationSelect').value;
+
+  const ok = confirm(
+    `Do you want to send payslips for ${month} ${year} - ${branchText} campus?`
+  );
+  if (!ok) return; // user cancelled
+
+  const branch = branchText.toLowerCase();
 
   // Apps Script web app URLs (all same script for now)
   const appScriptUrls = {
