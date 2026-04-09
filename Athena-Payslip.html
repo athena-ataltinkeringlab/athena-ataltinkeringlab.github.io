@@ -50,14 +50,14 @@ body {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--accent);
-  text-align: center;  /* centered title */
+  text-align: center;
 }
 
 .app-subtitle {
   font-size: 12px;
   color: var(--muted);
   margin-bottom: 14px;
-  text-align: center;  /* centered subtitle */
+  text-align: center;
 }
 
 /* Toolbar */
@@ -65,7 +65,7 @@ body {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: center; /* center all toolbar items */
+  justify-content: center;
   gap: 10px 14px;
   margin-bottom: 6px;
 }
@@ -125,7 +125,7 @@ input[type="file"]:focus {
   box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.06);
 }
 
-/* Payslip wrapper – smaller, like before (not full A4) */
+/* Payslip wrapper */
 .payslip {
   width: 190mm;
   margin: 20px auto;
@@ -366,11 +366,6 @@ input[type="file"]:focus {
   color: #374151;
 }
 
-.amount {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
 /* Totals row */
 .row-total td {
   border-top: 1px dashed #e5e7eb;
@@ -529,7 +524,7 @@ input[type="file"]:focus {
   margin-top: 10px;
 }
 
-/* Print optimisation – no forced full A4 box, just standard page */
+/* Print optimisation */
 @media print {
   @page {
     size: A4;
@@ -565,43 +560,43 @@ input[type="file"]:focus {
    </div>
   <h2>Athena Global School Payslip Generator 3.1</h2>
   <div class="app-subtitle">(Upload an Excel template containing employee salary details to easily generate payslips)</div>
+  <div class="toolbar">
+    <span class="toolbar-group-label">Upload file</span>
+    <input type="file" id="excelFile">
 
-<div class="toolbar">
-  <span class="toolbar-group-label">Upload file</span>
-  <input type="file" id="excelFile">
+    <span class="toolbar-group-label">Month</span>
+    <select id="monthSelect">
+      <option>January</option><option>February</option><option>March</option>
+      <option>April</option><option>May</option><option>June</option>
+      <option>July</option><option>August</option><option>September</option>
+      <option>October</option><option>November</option><option>December</option>
+    </select>
 
-  <span class="toolbar-group-label">Month</span>
-  <select id="monthSelect">
-    <option>January</option><option>February</option><option>March</option>
-    <option>April</option><option>May</option><option>June</option>
-    <option>July</option><option>August</option><option>September</option>
-    <option>October</option><option>November</option><option>December</option>
-  </select>
+    <select id="yearSelect"></select>
 
-  <select id="yearSelect"></select>
+    <span class="toolbar-group-label">Location</span>
+    <select id="locationSelect" onchange="renderAll()">
+      <option>Chennai</option>
+      <option>Chengalpattu</option>
+      <option>Chidambaram</option>
+    </select>
 
-  <span class="toolbar-group-label">Location</span>
-  <select id="locationSelect" onchange="renderAll()">
-    <option>Chennai</option>
-    <option>Chengalpattu</option>
-    <option>Chidambaram</option>
-  </select>
-
-  <!-- new full-width row for buttons -->
-  <div style="
-      flex-basis: 100%;
-      display: flex;
-      justify-content: center;
-      margin-top: 6px;
-    ">
-    <button onclick="processExcel()">Preview</button>
-    <button onclick="downloadAll()">Download PDFs</button>
-    <button onclick="sendAllEmails()">Send Emails</button>
-	<button onclick="resetPage()" style="font-size: 11px; padding: 4px 10px;">
-  Reset
-</button>
+    <!-- full-width row for buttons -->
+    <div style="
+        flex-basis: 100%;
+        display: flex;
+        justify-content: center;
+        margin-top: 6px;
+      ">
+      <button onclick="processExcel()">Preview</button>
+      <button onclick="downloadAll()">Download PDFs</button>
+      <button onclick="sendAllEmails()">Send Emails</button>
+      <button id="stopBtn" onclick="stopSending()" style="background:#6b7280;">Stop</button>
+      <button onclick="resetPage()" style="font-size: 11px; padding: 4px 10px;">
+        Reset
+      </button>
+    </div>
   </div>
-</div>
 
   <!-- Styled status box before preview -->
   <div id="emailStatus"
@@ -624,6 +619,7 @@ input[type="file"]:focus {
 
 <script>
 let employees = [];
+let stopSendingFlag = false;
 
 function safe(v){return v || 0;}
 function money(v){
@@ -660,7 +656,7 @@ Chidambaram – 608602`;
   return "";
 }
 
-/* Theme colors based on location (including pay period + bg) */
+/* Theme colors based on location */
 function applyTheme(loc){
   const root = document.documentElement;
   if(loc === 'Chennai'){
@@ -885,27 +881,59 @@ async function downloadAll(){
   }
 }
 
+/* Stop button */
+function stopSending() {
+  stopSendingFlag = true;
+  const stopBtn = document.getElementById('stopBtn');
+  if (stopBtn) stopBtn.textContent = 'Stopping...';
+}
+
+/* Helper: mark all pending rows as stopped, return how many were changed */
+function markPendingAsStopped(rowInfo, statusDiv) {
+  let newlyFailed = 0;
+
+  rowInfo.forEach(info => {
+    const row = document.getElementById(info.id);
+    if (!row) return;
+
+    if (row.textContent.includes('Pending')) {
+      row.textContent = row.textContent.replace(
+        'Pending...',
+        'Failed ❌ (Stopped by user)'
+      );
+      newlyFailed++;
+    }
+  });
+
+  const infoDiv = document.createElement('div');
+  infoDiv.style.marginTop = '6px';
+  infoDiv.textContent = 'Sending stopped by user.';
+  statusDiv.appendChild(infoDiv);
+
+  return newlyFailed;
+}
+
+/* Send all emails with empty-email fail + stop support */
 async function sendAllEmails() {
   if (!employees.length) {
     alert('No employees. Process Excel first.');
     return;
   }
 
-  // simple confirmation dialog
+  stopSendingFlag = false;
   const month = document.getElementById('monthSelect').value;
   const year  = document.getElementById('yearSelect').value;
   const branchText = document.getElementById('locationSelect').value;
+  const loc = branchText; // Use for theme
 
   const ok = confirm(
-    `Do you want to send payslips for ${month} ${year} - ${branchText} campus?`
+    `Do you want to send payslips for ${month} ${year} - ${branchText}?`
   );
-  if (!ok) return; // user cancelled
+  if (!ok) return;
 
   const branch = branchText.toLowerCase();
-
-  // Apps Script web app URLs (all same script for now)
   const appScriptUrls = {
-    chennai:      'https://script.google.com/macros/s/AKfycbwJUa0dN8aZcnMmpa_fWrw2JeQb0Yg7rAGWsMaxLMcfS4ZFOCMCQt0FR1j3SeNDz-_X/exec',
+    chennai:      'https://script.google.com/macros/s/AKfycbx3Djj2a0mo_4XdfOm6bRXMpTSsi_bQTA-Jjrx8PvsZOP88mGKTHfhl0YN8YdbBYRW_rg/exec',
     chengalpattu: 'https://script.google.com/macros/s/AKfycbwJUa0dN8aZcnMmpa_fWrw2JeQb0Yg7rAGWsMaxLMcfS4ZFOCMCQt0FR1j3SeNDz-_X/exec',
     chidambaram:  'https://script.google.com/macros/s/AKfycbwC2FqzhCQzZ2NP9c5skpcYgUVnfw8A3ejjWETGffIPTIqpxUhnwM93q5WmJLl4h44/exec'
   };
@@ -916,92 +944,150 @@ async function sendAllEmails() {
     return;
   }
 
+  // Apply theme FIRST
+  applyTheme(loc);
+
   const statusDiv = document.getElementById('emailStatus');
   statusDiv.innerHTML = '';
 
   let successCount = 0;
   let failureCount = 0;
+  const rowInfo = [];
 
   // Build status rows
   const list = document.createElement('div');
   employees.forEach(emp => {
     const row = document.createElement('div');
     row.style.marginBottom = '2px';
-    row.id = 'email-status-' + (emp['Employee Number'] || emp['Employee Name']);
+    const rowKey = (emp['Employee Number'] || emp['Employee Name'] || '')
+      .toString()
+      .replace(/\s+/g, '_');
+    const rowId = 'email-status-' + rowKey + '_' + Math.random().toString(36).slice(2, 7);
+    row.id = rowId;
+    row.dataset.rowKey = rowKey;
     row.textContent = (emp['Employee Name'] || 'Unknown') + ' – Pending...';
     list.appendChild(row);
+    rowInfo.push({ key: rowKey, id: rowId });
   });
   statusDiv.appendChild(list);
 
-  for (let emp of employees) {
-    const el = document.createElement('div');
-    el.innerHTML = generateHTML(emp);
-
-    let pdfBlob;
-    try {
-      pdfBlob = await html2pdf()
-        .set({
-          margin: 5,
-          html2canvas: { scale: 2 },
-          jsPDF: { unit: 'mm', format: 'a4' },
-          pagebreak: { mode: ['avoid-all'] }
-        })
-        .from(el)
-        .outputPdf('blob');
-    } catch (e) {
-      failureCount++;
-      const rowId = 'email-status-' + (emp['Employee Number'] || emp['Employee Name']);
-      const row = document.getElementById(rowId);
-      if (row) row.textContent = (emp['Employee Name'] || 'Unknown') + ' – PDF generation failed ❌';
-      continue;
-    }
-
-    const reader = new FileReader();
-    const base64 = await new Promise(resolve => {
-      reader.onloadend = () => resolve(reader.result);
-      reader.readAsDataURL(pdfBlob);
-    });
-
-    let res;
-    let text = '';
-    try {
-      res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({
-          branch,
-          month,
-          year,
-          employees: [{ ...emp, pdf: base64 }]
-        })
-      });
-      text = await res.text();
-    } catch (err) {
-      res = { ok: false };
-      text = err.message || 'Network error';
-    }
-
-    const rowId = 'email-status-' + (emp['Employee Number'] || emp['Employee Name']);
-    const row = document.getElementById(rowId);
-
-    if (res.ok) {
-      successCount++;
-      if (row) row.textContent = (emp['Employee Name'] || 'Unknown') + ' – Sent ✅';
-    } else {
-      failureCount++;
-      if (row) row.textContent = (emp['Employee Name'] || 'Unknown') + ' – Failed ❌ (' + text + ')';
-    }
+for (let emp of employees) {
+  if (stopSendingFlag) {
+    failureCount += markPendingAsStopped(rowInfo, statusDiv);
+    break;
   }
 
-  alert(`Emails finished for ${month} ${year}.\nSent: ${successCount}\nFailed: ${failureCount}`);
+  const rowKey = (emp['Employee Number'] || emp['Employee Name'] || '')
+    .toString()
+    .replace(/\s+/g, '_');
+  const rowEntry = rowInfo.find(r => r.key === rowKey);
+  const row = rowEntry ? document.getElementById(rowEntry.id) : null;
+
+  const email = (
+    emp['Official Mail ID'] ||
+    emp['Official Email']   ||
+    emp['Email']            ||
+    emp['Mail']             ||
+    ''
+  ).toString().trim();
+
+  if (!email) {
+    failureCount++;
+    if (row) row.textContent =
+      (emp['Employee Name'] || 'Unknown') + ' – Failed ❌ (No email address)';
+    continue;
+  }
+
+  // --- PDF GENERATION (match downloadAll as closely as possible) ---
+
+  // 1) Create a wrapper and put it in the same DOM flow as preview
+  const wrapper = document.createElement('div');
+  wrapper.style.position = 'relative';
+  wrapper.style.margin = '0';
+  wrapper.innerHTML = generateHTML(emp);
+
+  // Use the same parent as preview, so layout/CSS is identical
+  const preview = document.getElementById('preview');
+  (preview || document.body).appendChild(wrapper);
+
+  // 2) Wait for layout
+  await new Promise(r => setTimeout(r, 100));
+
+  let dataUri;
+  try {
+    dataUri = await html2pdf()
+      .set({
+        margin:      8,                          // same as downloadAll
+        filename:    `${emp['Employee Name']} Payslip.pdf`,
+        html2canvas: { scale: 2 },
+        jsPDF:       { unit: 'mm', format: 'a4' }
+      })
+      .from(wrapper)
+      .outputPdf('datauristring');              // data:application/pdf;base64,...
+  } catch (e) {
+    failureCount++;
+    if (row) row.textContent =
+      (emp['Employee Name'] || 'Unknown') + ' – PDF generation failed ❌';
+    wrapper.remove();
+    continue;
+  }
+
+  // 3) Remove wrapper (do not keep duplicate DOM)
+  wrapper.remove();
+
+  if (stopSendingFlag) {
+    failureCount += markPendingAsStopped(rowInfo, statusDiv);
+    break;
+  }
+
+  // --- SEND TO APPS SCRIPT ---
+
+  let res;
+  let text = '';
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        branch,
+        month,
+        year,
+        employees: [{ ...emp, pdf: dataUri, email }]
+      })
+    });
+    text = await res.text();
+  } catch (err) {
+    res = { ok: false };
+    text = err.message || 'Network error';
+  }
+
+  if (res.ok) {
+    successCount++;
+    if (row) row.textContent =
+      (emp['Employee Name'] || 'Unknown') + ' – Sent ✅';
+  } else {
+    failureCount++;
+    if (row) row.textContent =
+      (emp['Employee Name'] || 'Unknown') + ' – Failed ❌ (' + text + ')';
+  }
+}
+   
+  const stopBtn = document.getElementById('stopBtn');
+  if (stopBtn) stopBtn.textContent = 'Stop';
+
+  const summary = document.createElement('div');
+  summary.style.marginTop = '6px';
+  summary.style.fontWeight = '600';
+  summary.textContent =
+    `Done: ${month} ${year} – Sent: ${successCount}, Failed: ${failureCount}`;
+  statusDiv.appendChild(summary);
 }
 
+/* Reset page */
 function resetPage() {
-  // Clear file input
   const fileInput = document.getElementById('excelFile');
-  if (fileInput) fileInput.value = '';  // clears chosen file[web:134]
+  if (fileInput) fileInput.value = '';
 
-  // Reset dropdowns
   const monthSel = document.getElementById('monthSelect');
   const yearSel  = document.getElementById('yearSelect');
   const locSel   = document.getElementById('locationSelect');
@@ -1010,12 +1096,16 @@ function resetPage() {
   if (yearSel)  yearSel.selectedIndex  = 0;
   if (locSel)   locSel.selectedIndex   = 0;
 
-  // Clear employees array and UI
   employees = [];
+  stopSendingFlag = false;
+
   const preview   = document.getElementById('preview');
   const statusDiv = document.getElementById('emailStatus');
+  const stopBtn   = document.getElementById('stopBtn');
+
   if (preview)   preview.innerHTML = '';
   if (statusDiv) statusDiv.innerHTML = '';
+  if (stopBtn)   stopBtn.textContent = 'Stop';
 }
 </script>
 
