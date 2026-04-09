@@ -1001,10 +1001,13 @@ for (let emp of employees) {
   // --- PDF GENERATION (match downloadAll as closely as possible) ---
 
   // 1) Create a wrapper and put it in the same DOM flow as preview
+ 
   const wrapper = document.createElement('div');
-  wrapper.style.position = 'relative';
-  wrapper.style.margin = '0';
-  wrapper.innerHTML = generateHTML(emp);
+wrapper.style.width = '210mm';      // exact A4 width
+wrapper.style.margin = '0';
+wrapper.innerHTML = generateHTML(emp);
+(document.getElementById('preview') || document.body).appendChild(wrapper);
+await new Promise(r => setTimeout(r, 100));
 
   // Use the same parent as preview, so layout/CSS is identical
   const preview = document.getElementById('preview');
@@ -1013,33 +1016,35 @@ for (let emp of employees) {
   // 2) Wait for layout
   await new Promise(r => setTimeout(r, 100));
 
-  let dataUri;
-  try {
-    dataUri = await html2pdf()
-      .set({
-        margin:      8,                          // same as downloadAll
-        filename:    `${emp['Employee Name']} Payslip.pdf`,
-        html2canvas: { scale: 2 },
-        jsPDF:       { unit: 'mm', format: 'a4' }
-      })
-      .from(wrapper)
-      .outputPdf('datauristring');              // data:application/pdf;base64,...
-  } catch (e) {
-    failureCount++;
-    if (row) row.textContent =
-      (emp['Employee Name'] || 'Unknown') + ' – PDF generation failed ❌';
-    wrapper.remove();
-    continue;
-  }
-
-  // 3) Remove wrapper (do not keep duplicate DOM)
+ // inside the loop, when generating PDF
+let dataUri;
+try {
+  dataUri = await html2pdf()
+    .set({
+      margin: 0,   // we’ll handle margin in CSS/HTML
+      filename: `${emp['Employee Name']} Payslip.pdf`,
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        letterRendering: true,
+        scrollY: 0               // important for consistency
+      },
+      jsPDF: {
+        unit: 'mm',
+        format: 'a4',
+        orientation: 'portrait'
+      }
+      // NO pagebreak option at all for single-page payslip
+    })
+    .from(wrapper)              // wrapper has exactly one .payslip
+    .outputPdf('datauristring');
+} catch (e) {
+  failureCount++;
+  if (row) row.textContent =
+    (emp['Employee Name'] || 'Unknown') + ' – PDF generation failed ❌';
   wrapper.remove();
-
-  if (stopSendingFlag) {
-    failureCount += markPendingAsStopped(rowInfo, statusDiv);
-    break;
-  }
-
+  continue;
+}
   // --- SEND TO APPS SCRIPT ---
 
   let res;
