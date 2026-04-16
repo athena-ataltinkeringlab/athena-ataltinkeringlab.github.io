@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Athena Global School Yearbook 2025-26</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: white;
+  overflow: hidden;
+}
+
+.app {
+  padding: 10px;
+  height: 100vh;
+  box-sizing: border-box;
+}
+
+/* Compact single-line topbar with title and buttons */
+.topbar {
+  display: flex;
+  align-items: center;           /* vertical center single line [web:28][web:20] */
+  justify-content: space-between;
+  gap: 8px;
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: blur(16px);
+  padding: 6px 10px;             /* small height */
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+  margin-bottom: 6px;
+}
+
+/* Left and right button groups */
+.nav-group,
+.zoom-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Centered title in the same line */
+.title-center {
+  flex: 1;                       /* takes remaining space */
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn {
+  padding: 4px 10px;
+  background: linear-gradient(45deg, rgba(59,130,246,0.9), rgba(147,51,234,0.9));
+  border: none;
+  color: white;
+  cursor: pointer;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 11px;              /* smaller */
+  transition: all 0.2s;
+  box-shadow: 0 3px 10px rgba(59,130,246,0.4);
+  white-space: nowrap;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(59,130,246,0.5);
+}
+
+/* Small page info below header */
+.page-info {
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(255,255,255,0.12);
+  padding: 3px 8px;
+  border-radius: 999px;
+  display: inline-block;
+  margin-bottom: 6px;
+}
+
+/* Layout */
+.viewer {
+  display: grid;
+  grid-template-columns: 1fr 150px;
+  gap: 10px;
+  height: calc(100vh - 70px);
+}
+
+.main {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(16px);
+  border-radius: 12px;
+  box-shadow: 0 16px 32px rgba(0,0,0,0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Zoom wrapper */
+.book-wrapper {
+  transform-origin: center center;
+  transition: transform 0.25s ease;
+}
+
+/* Flipbook size (adjust here if needed) */
+#book {
+  width: 1120px;
+  height: 792px;
+  max-width: 100%;
+}
+
+.page {
+  background: #ffffff;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.page img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;          /* show full image, no crop [web:9] */
+}
+
+/* Thumbnails */
+.thumbs {
+  overflow: auto;
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(16px);
+  border-radius: 12px;
+  padding: 8px;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.35);
+}
+
+.thumb {
+  margin-bottom: 6px;
+  cursor: pointer;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.15s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+}
+
+.thumb img {
+  width: 100%;
+  aspect-ratio: 1/1.414;
+  object-fit: cover;
+}
+
+.thumb.active {
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.95);
+  transform: scale(1.03);
+}
+
+/* Loading */
+.loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 16px;
+  color: rgba(255,255,255,0.7);
+}
+
+/* Mobile */
+@media (max-width:768px) {
+  .viewer {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    height: calc(100vh - 90px);
+  }
+
+  .topbar {
+    flex-wrap: wrap;            /* allow wrap on very small screens */
+    row-gap: 4px;
+  }
+
+  .title-center {
+    order: 1;
+    flex-basis: 100%;
+    text-align: center;
+  }
+
+  .nav-group {
+    order: 0;
+  }
+
+  .zoom-group {
+    order: 2;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Compact header: nav + title + zoom in one line -->
+  <div class="topbar">
+    <div class="nav-group">
+      <button class="btn" id="prev">‹ Prev</button>
+      <button class="btn" id="next">Next ›</button>
+    </div>
+
+    <div class="title-center">
+      Athena Global School Yearbook 2025-26
+    </div>
+
+    <div class="zoom-group">
+      <button class="btn" id="zoomOut">−</button>
+      <button class="btn" id="zoomReset">80%</button>
+      <button class="btn" id="zoomIn">+</button>
+    </div>
+  </div>
+
+  <div class="page-info" id="pageText">Pages 1 - 2</div>
+
+  <div class="viewer">
+    <div class="main">
+      <div class="loading" id="loading">Loading...</div>
+      <div class="book-wrapper" id="bookWrapper">
+        <div id="book"></div>
+      </div>
+    </div>
+
+    <div class="thumbs" id="thumbs"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.min.js"></script>
+
+<script>
+let pageFlip;
+const book = document.getElementById("book");
+const thumbs = document.getElementById("thumbs");
+const pageText = document.getElementById("pageText");
+const loading = document.getElementById("loading");
+const bookWrapper = document.getElementById("bookWrapper");
+
+const TOTAL_PAGES = 136;
+const pageImages = [];
+for (let i = 1; i <= TOTAL_PAGES; i++) {
+  pageImages.push(`Img/${i}.jpg`);
+}
+
+let currentPage = 0;
+
+/* Zoom state – default 80% */
+let zoomLevel = 0.8;       // default 80% zoom
+const minZoom = 0.5;
+const maxZoom = 2.0;
+const zoomStep = 0.1;
+
+function applyZoom() {
+  bookWrapper.style.transform = `scale(${zoomLevel})`;
+  document.getElementById("zoomReset").innerText = Math.round(zoomLevel * 100) + "%";
+}
+
+document.getElementById("zoomIn").onclick = () => {
+  zoomLevel = Math.min(maxZoom, zoomLevel + zoomStep);
+  applyZoom();
+};
+
+document.getElementById("zoomOut").onclick = () => {
+  zoomLevel = Math.max(minZoom, zoomLevel - zoomStep);
+  applyZoom();
+};
+
+document.getElementById("zoomReset").onclick = () => {
+  zoomLevel = 0.8;   // reset back to 80%
+  applyZoom();
+};
+
+function renderPages() {
+  book.innerHTML = "";
+  pageImages.forEach((src) => {
+    const page = document.createElement("div");
+    page.className = "page";
+    page.innerHTML = `<img src="${src}">`;
+    book.appendChild(page);
+  });
+}
+
+function renderThumbs() {
+  thumbs.innerHTML = "";
+  pageImages.forEach((src, i) => {
+    const t = document.createElement("div");
+    t.className = "thumb" + (i === 0 ? " active" : "");
+    t.innerHTML = `<img src="${src}" loading="lazy">`;
+    t.onclick = () => {
+      pageFlip.flip(i);
+      updateThumbActive(i); // extra call for instant highlight
+    };
+    thumbs.appendChild(t);
+  });
+}
+
+/* Highlight and scroll active thumbnail into view */
+function updateThumbActive(index) {
+  const allThumbs = document.querySelectorAll(".thumb");
+  allThumbs.forEach((thumb, i) => {
+    thumb.classList.toggle("active", i === index);
+  });
+
+  const activeThumb = allThumbs[index];
+  if (activeThumb) {
+    activeThumb.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+      inline: "nearest"
+    }); // scrolls inside .thumbs container [web:46][web:50][web:53]
+  }
+}
+
+function updatePage(index) {
+  currentPage = index;
+  if (window.innerWidth <= 768) {
+    pageText.innerText = `Page ${index + 1}`;
+  } else {
+    pageText.innerText = `Pages ${index + 1} - ${Math.min(index + 2, TOTAL_PAGES)}`;
+  }
+  updateThumbActive(index);
+}
+
+function initFlip() {
+  if (pageFlip) pageFlip.destroy();
+
+  pageFlip = new St.PageFlip(book, {
+    width: 560,
+    height: 792,
+    size: "fixed",      // keep large double-page layout [web:1][web:54]
+    autoSize: false,
+    usePortrait: true,
+    showCover: false,
+    drawShadow: true,
+    flippingTime: 900
+  });
+
+  pageFlip.loadFromHTML(book.querySelectorAll(".page"));
+
+  pageFlip.on("flip", (e) => {
+    updatePage(e.data);   // sync text + thumbnail + scroll
+  });
+
+  pageFlip.on("init", () => {
+    loading.style.display = "none";
+    updatePage(0);
+  });
+}
+
+function init() {
+  loading.style.display = "block";
+  renderPages();
+  renderThumbs();
+  initFlip();
+}
+
+/* Navigation buttons */
+document.getElementById("prev").onclick = () => pageFlip && pageFlip.flipPrev();
+document.getElementById("next").onclick = () => pageFlip && pageFlip.flipNext();
+
+/* Resize: keep page index and zoom */
+let resizeTimeout;
+window.onresize = () => {
+  clearTimeout(resizeTimeout);
+  resizeTimeout = setTimeout(() => {
+    const page = pageFlip ? pageFlip.getCurrentPageIndex() : 0;
+    init();
+    if (pageFlip) pageFlip.flip(page);
+    applyZoom();
+  }, 250);
+};
+
+init();
+applyZoom();   // apply 80% zoom on load [web:37][web:38]
+</script>
+
+</body>
+</html>
