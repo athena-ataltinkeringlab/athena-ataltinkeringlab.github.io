@@ -14,6 +14,10 @@ body {
   overflow: hidden;
 }
 
+* {
+  box-sizing: border-box;
+}
+
 .app {
   padding: 10px;
   height: 100vh;
@@ -75,7 +79,7 @@ body {
   font-size: 12px;
   font-weight: 600;
   background: rgba(255,255,255,0.12);
-  padding: 3px 8px;
+  padding: 6px 10px;
   border-radius: 999px;
   display: inline-block;
   margin-bottom: 6px;
@@ -85,7 +89,7 @@ body {
   display: grid;
   grid-template-columns: 1fr 150px;
   gap: 10px;
-  height: calc(100vh - 70px);
+  height: calc(100vh - 76px);
 }
 
 .main {
@@ -95,11 +99,10 @@ body {
   border-radius: 12px;
   box-shadow: 0 16px 32px rgba(0,0,0,0.4);
   overflow: hidden;
-  touch-action: none;
+  touch-action: pan-y;
   cursor: default;
 }
 
-/* Layer 1: always centered */
 .book-center {
   position: absolute;
   left: 50%;
@@ -107,13 +110,11 @@ body {
   transform: translate(-50%, -50%);
 }
 
-/* Layer 2: pan only */
 .book-pan {
   transform: translate(0px, 0px);
   will-change: transform;
 }
 
-/* Layer 3: zoom + rotate only */
 .book-transform {
   transform: scale(0.8) rotate(0deg);
   transform-origin: center center;
@@ -137,6 +138,9 @@ body {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
 .thumbs {
@@ -161,6 +165,7 @@ body {
   width: 100%;
   aspect-ratio: 1/1.414;
   object-fit: cover;
+  display: block;
 }
 
 .thumb.active {
@@ -187,55 +192,53 @@ body {
     padding: 8px;
   }
 
+  .topbar {
+    justify-content: center;
+    padding: 10px 12px;
+  }
+
+  .title-center {
+    flex: unset;
+    width: 100%;
+    text-align: center;
+    font-size: 13px;
+    white-space: normal;
+    line-height: 1.35;
+  }
+
+  .nav-group,
+  .zoom-group,
+  .move-group {
+    display: none !important;
+  }
+
+  .page-info {
+    display: block;
+    text-align: center;
+    font-size: 12px;
+    border-radius: 10px;
+    margin-bottom: 8px;
+  }
+
   .viewer {
     grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr) auto;
     gap: 8px;
     height: calc(100vh - 118px);
   }
 
-  .topbar {
-    flex-wrap: wrap;
-    row-gap: 6px;
-    justify-content: center;
-  }
-
-  .title-center {
-    order: 1;
-    flex-basis: 100%;
-    text-align: center;
-    font-size: 13px;
-  }
-
-  .nav-group {
-    order: 0;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-
-  .zoom-group {
-    order: 2;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-
-  .move-group {
-    order: 3;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-
-  .btn {
-    font-size: 10px;
-    padding: 6px 10px;
+  .main {
+    min-height: 0;
   }
 
   .thumbs {
     display: block;
-    max-height: 115px;
+    max-height: 110px;
     overflow-x: auto;
     overflow-y: hidden;
     white-space: nowrap;
     padding: 6px;
+    border-radius: 10px;
   }
 
   .thumb {
@@ -244,6 +247,11 @@ body {
     margin-right: 6px;
     margin-bottom: 0;
     vertical-align: top;
+    transform: none !important;
+  }
+
+  .thumb.active {
+    transform: none !important;
   }
 }
 </style>
@@ -317,18 +325,16 @@ for (let i = 1; i <= TOTAL_PAGES; i++) {
 
 let currentPage = 0;
 
-/* Zoom */
+/* Desktop controls */
 let zoomLevel = 0.8;
 const defaultZoom = 0.8;
 const minZoom = 0.5;
 const maxZoom = 2;
 const zoomStep = 0.05;
 
-/* Rotate */
 let rotateDeg = 0;
 const rotateStep = 90;
 
-/* Pan */
 let offsetX = 0;
 let offsetY = 0;
 let isDragging = false;
@@ -337,12 +343,22 @@ let dragStartY = 0;
 let startOffsetX = 0;
 let startOffsetY = 0;
 
-/* Pinch */
 let pinchStartDistance = 0;
 let pinchStartZoom = zoomLevel;
 
-/* Button move */
 const moveStep = 40;
+
+function isMobileView() {
+  return window.innerWidth <= 768;
+}
+
+function getBookBaseWidth() {
+  return isMobileView() ? 560 : 1120;
+}
+
+function getBookBaseHeight() {
+  return 792;
+}
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -364,16 +380,19 @@ function resetPosition() {
 }
 
 function getEffectiveSize() {
+  const baseWidth = getBookBaseWidth();
+  const baseHeight = getBookBaseHeight();
+
   const normalizedRotate = ((rotateDeg % 360) + 360) % 360;
   const quarterTurns = normalizedRotate === 90 || normalizedRotate === 270;
 
-  const baseW = 1120 * zoomLevel;
-  const baseH = 792 * zoomLevel;
+  const w = baseWidth * zoomLevel;
+  const h = baseHeight * zoomLevel;
 
   if (quarterTurns) {
-    return { width: baseH, height: baseW };
+    return { width: h, height: w };
   }
-  return { width: baseW, height: baseH };
+  return { width: w, height: h };
 }
 
 function clampOffsets() {
@@ -387,9 +406,27 @@ function clampOffsets() {
   offsetY = clamp(offsetY, -maxY, maxY);
 }
 
-function applyTransform() {
-  clampOffsets();
+function getMobileFitScale() {
+  const rect = viewerMain.getBoundingClientRect();
+  const padX = 24;
+  const padY = 24;
+  const availableW = Math.max(120, rect.width - padX);
+  const availableH = Math.max(120, rect.height - padY);
+  const baseW = 560;
+  const baseH = 792;
 
+  return Math.min(availableW / baseW, availableH / baseH);
+}
+
+function applyTransform() {
+  if (isMobileView()) {
+    const mobileScale = getMobileFitScale();
+    bookPan.style.transform = `translate(0px, 0px)`;
+    bookTransform.style.transform = `scale(${mobileScale}) rotate(0deg)`;
+    return;
+  }
+
+  clampOffsets();
   bookPan.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
   bookTransform.style.transform = `scale(${zoomLevel}) rotate(${rotateDeg}deg)`;
 
@@ -397,52 +434,175 @@ function applyTransform() {
   document.getElementById("rotateReset").innerText = `${rotateDeg}°`;
 }
 
-/* Buttons */
+function updateThumbActive(index) {
+  const allThumbs = document.querySelectorAll(".thumb");
+  allThumbs.forEach((thumb, i) => {
+    thumb.classList.toggle("active", i === index);
+  });
+
+  const activeThumb = allThumbs[index];
+  if (activeThumb) {
+    activeThumb.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+      inline: "nearest"
+    });
+  }
+}
+
+function updatePage(index) {
+  currentPage = index;
+
+  if (isMobileView()) {
+    pageText.innerText = `Page ${index + 1} / ${TOTAL_PAGES}`;
+  } else {
+    pageText.innerText = `Pages ${index + 1} - ${Math.min(index + 2, TOTAL_PAGES)}`;
+  }
+
+  updateThumbActive(index);
+}
+
+function renderPages() {
+  book.innerHTML = "";
+  pageImages.forEach((src) => {
+    const page = document.createElement("div");
+    page.className = "page";
+    page.innerHTML = `<img src="${src}" alt="Page">`;
+    book.appendChild(page);
+  });
+}
+
+function renderThumbs() {
+  thumbs.innerHTML = "";
+  pageImages.forEach((src, i) => {
+    const t = document.createElement("div");
+    t.className = "thumb" + (i === currentPage ? " active" : "");
+    t.innerHTML = `<img src="${src}" loading="lazy" alt="Thumbnail ${i + 1}">`;
+    t.onclick = () => {
+      if (pageFlip) pageFlip.flip(i);
+    };
+    thumbs.appendChild(t);
+  });
+}
+
+function setBookSize() {
+  if (isMobileView()) {
+    book.style.width = "560px";
+    book.style.height = "792px";
+  } else {
+    book.style.width = "1120px";
+    book.style.height = "792px";
+  }
+}
+
+function initFlip() {
+  if (pageFlip) {
+    pageFlip.destroy();
+    pageFlip = null;
+  }
+
+  setBookSize();
+
+  pageFlip = new St.PageFlip(book, {
+    width: 560,
+    height: 792,
+    size: "fixed",
+    autoSize: false,
+    usePortrait: true,
+    showCover: false,
+    drawShadow: true,
+    flippingTime: isMobileView() ? 700 : 900,
+    mobileScrollSupport: false,
+    maxShadowOpacity: 0.5
+  });
+
+  pageFlip.loadFromHTML(book.querySelectorAll(".page"));
+
+  pageFlip.on("flip", (e) => {
+    updatePage(e.data);
+  });
+
+  pageFlip.on("init", () => {
+    loading.style.display = "none";
+    updatePage(currentPage);
+    applyTransform();
+  });
+
+  if (currentPage > 0) {
+    pageFlip.flip(currentPage);
+  }
+}
+
+function init() {
+  loading.style.display = "block";
+  renderPages();
+  renderThumbs();
+  initFlip();
+}
+
+/* Desktop buttons */
+document.getElementById("prev").onclick = () => {
+  if (!isMobileView() && pageFlip) pageFlip.flipPrev();
+};
+
+document.getElementById("next").onclick = () => {
+  if (!isMobileView() && pageFlip) pageFlip.flipNext();
+};
+
 document.getElementById("zoomIn").onclick = () => {
+  if (isMobileView()) return;
   zoomLevel = clamp(zoomLevel + zoomStep, minZoom, maxZoom);
   applyTransform();
 };
 
 document.getElementById("zoomOut").onclick = () => {
+  if (isMobileView()) return;
   zoomLevel = clamp(zoomLevel - zoomStep, minZoom, maxZoom);
   if (!canPan()) resetPosition();
   applyTransform();
 };
 
 document.getElementById("zoomReset").onclick = () => {
+  if (isMobileView()) return;
   zoomLevel = defaultZoom;
   if (rotateDeg % 360 === 0) resetPosition();
   applyTransform();
 };
 
 document.getElementById("rotateLeft").onclick = () => {
+  if (isMobileView()) return;
   rotateDeg -= rotateStep;
   applyTransform();
 };
 
 document.getElementById("rotateRight").onclick = () => {
+  if (isMobileView()) return;
   rotateDeg += rotateStep;
   applyTransform();
 };
 
 document.getElementById("rotateReset").onclick = () => {
+  if (isMobileView()) return;
   rotateDeg = 0;
   if (!canPan()) resetPosition();
   applyTransform();
 };
 
 document.getElementById("moveUp").onclick = () => {
+  if (isMobileView()) return;
   offsetY -= moveStep;
   applyTransform();
 };
 
 document.getElementById("moveDown").onclick = () => {
+  if (isMobileView()) return;
   offsetY += moveStep;
   applyTransform();
 };
 
-/* Mouse wheel zoom only */
 viewerMain.addEventListener("wheel", (e) => {
+  if (isMobileView()) return;
+
   e.preventDefault();
 
   if (e.deltaY < 0) {
@@ -455,8 +615,10 @@ viewerMain.addEventListener("wheel", (e) => {
   applyTransform();
 }, { passive: false });
 
-/* Touch */
+/* Desktop touch only */
 viewerMain.addEventListener("touchstart", (e) => {
+  if (isMobileView()) return;
+
   if (e.touches.length === 2) {
     pinchStartDistance = getTouchDistance(e.touches[0], e.touches[1]);
     pinchStartZoom = zoomLevel;
@@ -474,6 +636,8 @@ viewerMain.addEventListener("touchstart", (e) => {
 }, { passive: false });
 
 viewerMain.addEventListener("touchmove", (e) => {
+  if (isMobileView()) return;
+
   if (e.touches.length === 2) {
     e.preventDefault();
 
@@ -497,113 +661,20 @@ viewerMain.addEventListener("touchmove", (e) => {
 }, { passive: false });
 
 viewerMain.addEventListener("touchend", () => {
+  if (isMobileView()) return;
   isDragging = false;
   pinchStartDistance = 0;
 });
 
-/* Render pages */
-function renderPages() {
-  book.innerHTML = "";
-  pageImages.forEach((src) => {
-    const page = document.createElement("div");
-    page.className = "page";
-    page.innerHTML = `<img src="${src}" alt="Page">`;
-    book.appendChild(page);
-  });
-}
-
-function renderThumbs() {
-  thumbs.innerHTML = "";
-  pageImages.forEach((src, i) => {
-    const t = document.createElement("div");
-    t.className = "thumb" + (i === 0 ? " active" : "");
-    t.innerHTML = `<img src="${src}" loading="lazy" alt="Thumbnail ${i + 1}">`;
-    t.onclick = () => {
-      if (pageFlip) pageFlip.flip(i);
-      updateThumbActive(i);
-    };
-    thumbs.appendChild(t);
-  });
-}
-
-function updateThumbActive(index) {
-  const allThumbs = document.querySelectorAll(".thumb");
-  allThumbs.forEach((thumb, i) => {
-    thumb.classList.toggle("active", i === index);
-  });
-
-  const activeThumb = allThumbs[index];
-  if (activeThumb) {
-    activeThumb.scrollIntoView({
-      behavior: "smooth",
-      block: "nearest",
-      inline: "nearest"
-    });
-  }
-}
-
-function updatePage(index) {
-  currentPage = index;
-  if (window.innerWidth <= 768) {
-    pageText.innerText = `Page ${index + 1}`;
-  } else {
-    pageText.innerText = `Pages ${index + 1} - ${Math.min(index + 2, TOTAL_PAGES)}`;
-  }
-  updateThumbActive(index);
-}
-
-function initFlip() {
-  if (pageFlip) pageFlip.destroy();
-
-  pageFlip = new St.PageFlip(book, {
-    width: 560,
-    height: 792,
-    size: "fixed",
-    autoSize: false,
-    usePortrait: true,
-    showCover: false,
-    drawShadow: true,
-    flippingTime: 900,
-    mobileScrollSupport: false
-  });
-
-  pageFlip.loadFromHTML(book.querySelectorAll(".page"));
-
-  pageFlip.on("flip", (e) => {
-    updatePage(e.data);
-  });
-
-  pageFlip.on("init", () => {
-    loading.style.display = "none";
-    updatePage(0);
-  });
-}
-
-function init() {
-  loading.style.display = "block";
-  renderPages();
-  renderThumbs();
-  initFlip();
-}
-
-/* Nav */
-document.getElementById("prev").onclick = () => pageFlip && pageFlip.flipPrev();
-document.getElementById("next").onclick = () => pageFlip && pageFlip.flipNext();
-
-/* Resize */
 let resizeTimeout;
 window.onresize = () => {
   clearTimeout(resizeTimeout);
   resizeTimeout = setTimeout(() => {
-    const page = pageFlip ? pageFlip.getCurrentPageIndex() : 0;
     init();
-    if (pageFlip) pageFlip.flip(page);
-    applyTransform();
   }, 250);
 };
 
 init();
-applyTransform();
 </script>
 
 </body>
