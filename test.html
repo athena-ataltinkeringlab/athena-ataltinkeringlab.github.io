@@ -14,13 +14,16 @@ body {
   overflow: hidden;
 }
 
+* {
+  box-sizing: border-box;
+}
+
 .app {
   padding: 10px;
   height: 100vh;
   box-sizing: border-box;
 }
 
-/* TOPBAR */
 .topbar {
   display: flex;
   align-items: center;
@@ -30,7 +33,16 @@ body {
   backdrop-filter: blur(16px);
   padding: 6px 10px;
   border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.35);
   margin-bottom: 6px;
+}
+
+.nav-group,
+.zoom-group,
+.move-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .title-center {
@@ -38,65 +50,57 @@ body {
   text-align: center;
   font-size: 14px;
   font-weight: 600;
-}
-
-/* BUTTONS */
-.nav-group,
-.zoom-group,
-.move-group {
-  display: flex;
-  gap: 6px;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .btn {
   padding: 4px 10px;
-  background: linear-gradient(45deg,#3b82f6,#9333ea);
+  background: linear-gradient(45deg, rgba(59,130,246,0.9), rgba(147,51,234,0.9));
   border: none;
   color: white;
-  border-radius: 999px;
-  font-size: 11px;
   cursor: pointer;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 11px;
+  transition: all 0.2s;
+  box-shadow: 0 3px 10px rgba(59,130,246,0.4);
+  white-space: nowrap;
 }
 
-/* MOBILE NOTE */
-.mobile-note {
-  display: none;
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(59,130,246,0.5);
 }
 
-/* PAGE CONTROL BAR */
-.page-info-wrap {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
+.page-info {
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(255,255,255,0.12);
+  padding: 6px 10px;
+  border-radius: 999px;
+  display: inline-block;
   margin-bottom: 6px;
 }
 
-.page-mini-btn {
-  display: none;
-  width: 32px;
-  height: 32px;
-  border-radius: 999px;
-  border: none;
-  background: linear-gradient(45deg,#3b82f6,#9333ea);
-  color: white;
-  font-size: 16px;
-  cursor: pointer;
-}
-
-/* VIEWER */
 .viewer {
   display: grid;
   grid-template-columns: 1fr 150px;
   gap: 10px;
-  height: calc(100vh - 120px);
+  height: calc(100vh - 76px);
 }
 
 .main {
   position: relative;
   background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(16px);
   border-radius: 12px;
+  box-shadow: 0 16px 32px rgba(0,0,0,0.4);
   overflow: hidden;
+  touch-action: pan-y;
+  cursor: default;
 }
 
 .book-center {
@@ -106,89 +110,168 @@ body {
   transform: translate(-50%, -50%);
 }
 
+.book-pan {
+  transform: translate(0px, 0px);
+  will-change: transform;
+}
+
 .book-transform {
-  transform: scale(0.8);
+  transform: scale(0.8) rotate(0deg);
+  transform-origin: center center;
+  transition: transform 0.12s ease;
+  will-change: transform;
 }
 
 #book {
   width: 1120px;
   height: 792px;
+  max-width: none;
 }
 
-/* THUMBS */
+.page {
+  background: #ffffff;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.page img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
 .thumbs {
   overflow: auto;
   background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(16px);
   border-radius: 12px;
   padding: 8px;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.35);
 }
 
 .thumb {
   margin-bottom: 6px;
   cursor: pointer;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.15s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
 }
 
 .thumb img {
   width: 100%;
   aspect-ratio: 1/1.414;
+  object-fit: cover;
+  display: block;
 }
 
-/* MOBILE */
+.thumb.active {
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.95);
+  transform: scale(1.03);
+}
+
+.loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 16px;
+  color: rgba(255,255,255,0.7);
+  z-index: 5;
+}
+
+#desktopHint {
+  display: none;
+}
+
 @media (max-width:768px) {
+  body {
+    overflow: hidden;
+  }
+
+  .app {
+    padding: 8px;
+  }
+
+  .topbar {
+    justify-content: center;
+    padding: 10px 12px;
+  }
+
+  .title-center {
+    flex: unset;
+    width: 100%;
+    text-align: center;
+    font-size: 13px;
+    white-space: normal;
+    line-height: 1.35;
+  }
 
   .nav-group,
   .zoom-group,
   .move-group {
-    display: none;
+    display: none !important;
   }
 
-  .mobile-note {
-    display: block;
-    text-align: center;
-    font-size: 11px;
-    background: rgba(255,255,255,0.1);
-    padding: 6px;
-    border-radius: 10px;
-    margin-bottom: 6px;
-  }
-
-  .page-mini-btn {
-    display: inline-block;
+  .page-info {
+    display: none !important;
   }
 
   .viewer {
     grid-template-columns: 1fr;
-    grid-template-rows: 1fr auto;
-    height: calc(100vh - 160px);
+    grid-template-rows: minmax(0, 1fr) auto;
+    gap: 8px;
+    height: calc(100vh - 118px);
   }
 
-  #book {
-    width: 560px;
-    height: 792px;
-  }
-
-  .book-transform {
-    transform: scale(0.65);
+  .main {
+    min-height: 0;
   }
 
   .thumbs {
-    white-space: nowrap;
+    display: block;
+    max-height: 110px;
     overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    padding: 6px;
+    border-radius: 10px;
   }
 
   .thumb {
     display: inline-block;
-    width: 60px;
+    width: 62px;
     margin-right: 6px;
+    margin-bottom: 0;
+    vertical-align: top;
+    transform: none !important;
+  }
+
+  .thumb.active {
+    transform: none !important;
+  }
+
+  #desktopHint {
+    display: block;
+    position: fixed;
+    bottom: 6px;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    font-size: 11px;
+    color: rgba(255,255,255,0.6);
+    pointer-events: none;
+    z-index: 20;
   }
 }
 </style>
 </head>
-
 <body>
 
 <div class="app">
-
   <div class="topbar">
     <div class="nav-group">
       <button class="btn" id="prev">‹ Prev</button>
@@ -198,92 +281,420 @@ body {
     <div class="title-center">
       Athena Global School Yearbook 2025-26
     </div>
+
+    <div class="zoom-group">
+      <button class="btn" id="zoomOut">−</button>
+      <button class="btn" id="zoomReset">80%</button>
+      <button class="btn" id="zoomIn">+</button>
+
+      <button class="btn" id="rotateLeft">⟲</button>
+      <button class="btn" id="rotateReset">0°</button>
+      <button class="btn" id="rotateRight">⟳</button>
+    </div>
+
+    <div class="move-group">
+      <button class="btn" id="moveUp">↑ Up</button>
+      <button class="btn" id="moveDown">↓ Down</button>
+    </div>
   </div>
 
-  <!-- MOBILE NOTE -->
-  <div class="mobile-note">
-    Best viewed on desktop
-  </div>
-
-  <!-- PAGE BUTTONS -->
-  <div class="page-info-wrap">
-    <button class="page-mini-btn" id="mobilePrev">‹</button>
-    <button class="page-mini-btn" id="mobileNext">›</button>
-  </div>
+  <div class="page-info" id="pageText">Pages 1 - 2</div>
 
   <div class="viewer">
-    <div class="main">
+    <div class="main" id="viewerMain">
+      <div class="loading" id="loading">Loading...</div>
+
       <div class="book-center">
-        <div class="book-transform">
-          <div id="book"></div>
+        <div class="book-pan" id="bookPan">
+          <div class="book-transform" id="bookTransform">
+            <div id="book"></div>
+          </div>
         </div>
       </div>
     </div>
 
     <div class="thumbs" id="thumbs"></div>
   </div>
-
 </div>
+
+<div id="desktopHint">For better viewing experience, use desktop view</div>
 
 <script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.min.js"></script>
 
 <script>
 let pageFlip;
+
 const book = document.getElementById("book");
 const thumbs = document.getElementById("thumbs");
+const pageText = document.getElementById("pageText");
+const loading = document.getElementById("loading");
+const viewerMain = document.getElementById("viewerMain");
+const bookPan = document.getElementById("bookPan");
+const bookTransform = document.getElementById("bookTransform");
 
-const TOTAL = 136;
-
-/* LOAD PAGES */
-function renderPages() {
-  book.innerHTML = "";
-  for (let i=1;i<=TOTAL;i++){
-    const p=document.createElement("div");
-    p.className="page";
-    p.innerHTML=`<img src="assets/images/Img/${i}.jpg">`;
-    book.appendChild(p);
-  }
+const TOTAL_PAGES = 136;
+const pageImages = [];
+for (let i = 1; i <= TOTAL_PAGES; i++) {
+  pageImages.push(`Img/${i}.jpg`);
 }
 
-/* THUMBS */
-function renderThumbs(){
-  thumbs.innerHTML="";
-  for(let i=0;i<TOTAL;i++){
-    const t=document.createElement("div");
-    t.className="thumb";
-    t.innerHTML=`<img src="assets/images/Img/${i+1}.jpg">`;
-    t.onclick=()=>pageFlip.flip(i);
-    thumbs.appendChild(t);
-  }
+let currentPage = 0;
+
+/* Desktop controls */
+let zoomLevel = 0.8;
+const defaultZoom = 0.8;
+const minZoom = 0.5;
+const maxZoom = 2;
+const zoomStep = 0.05;
+
+let rotateDeg = 0;
+const rotateStep = 90;
+
+let offsetX = 0;
+let offsetY = 0;
+let isDragging = false;
+let dragStartX = 0;
+let dragStartY = 0;
+let startOffsetX = 0;
+let startOffsetY = 0;
+
+let pinchStartDistance = 0;
+let pinchStartZoom = zoomLevel;
+
+const moveStep = 40;
+
+function isMobileView() {
+  return window.innerWidth <= 768;
 }
 
-/* INIT FLIP */
-function initFlip(){
-  if(pageFlip) pageFlip.destroy();
+function getBookBaseWidth() {
+  return isMobileView() ? 560 : 1120;
+}
 
-  pageFlip=new St.PageFlip(book,{
-    width:560,
-    height:792,
-    size:"fixed",
-    showCover:false,
-    usePortrait:true
+function getBookBaseHeight() {
+  return 792;
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function getTouchDistance(t1, t2) {
+  const dx = t2.clientX - t1.clientX;
+  const dy = t2.clientY - t1.clientY;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+function canPan() {
+  return zoomLevel > defaultZoom + 0.01 || rotateDeg % 360 !== 0;
+}
+
+function resetPosition() {
+  offsetX = 0;
+  offsetY = 0;
+}
+
+function getEffectiveSize() {
+  const baseWidth = getBookBaseWidth();
+  const baseHeight = getBookBaseHeight();
+
+  const normalizedRotate = ((rotateDeg % 360) + 360) % 360;
+  const quarterTurns = normalizedRotate === 90 || normalizedRotate === 270;
+
+  const w = baseWidth * zoomLevel;
+  const h = baseHeight * zoomLevel;
+
+  if (quarterTurns) {
+    return { width: h, height: w };
+  }
+  return { width: w, height: h };
+}
+
+function clampOffsets() {
+  const viewerRect = viewerMain.getBoundingClientRect();
+  const size = getEffectiveSize();
+
+  const maxX = Math.max(0, (size.width - viewerRect.width) / 2);
+  const maxY = Math.max(0, (size.height - viewerRect.height) / 2);
+
+  offsetX = clamp(offsetX, -maxX, maxX);
+  offsetY = clamp(offsetY, -maxY, maxY);
+}
+
+function getMobileFitScale() {
+  const rect = viewerMain.getBoundingClientRect();
+  const padX = 24;
+  const padY = 24;
+  const availableW = Math.max(120, rect.width - padX);
+  const availableH = Math.max(120, rect.height - padY);
+  const baseW = 560;
+  const baseH = 792;
+
+  return Math.min(availableW / baseW, availableH / baseH);
+}
+
+function applyTransform() {
+  if (isMobileView()) {
+    const mobileScale = getMobileFitScale();
+    bookPan.style.transform = `translate(0px, 0px)`;
+    bookTransform.style.transform = `scale(${mobileScale}) rotate(0deg)`;
+    return;
+  }
+
+  clampOffsets();
+  bookPan.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+  bookTransform.style.transform = `scale(${zoomLevel}) rotate(${rotateDeg}deg)`;
+
+  document.getElementById("zoomReset").innerText = Math.round(zoomLevel * 100) + "%";
+  document.getElementById("rotateReset").innerText = `${rotateDeg}°`;
+}
+
+function updateThumbActive(index) {
+  const allThumbs = document.querySelectorAll(".thumb");
+  allThumbs.forEach((thumb, i) => {
+    thumb.classList.toggle("active", i === index);
   });
 
-  pageFlip.loadFromHTML(book.children);
+  const activeThumb = allThumbs[index];
+  if (activeThumb) {
+    activeThumb.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+      inline: "nearest"
+    });
+  }
 }
 
-/* NAV */
-document.getElementById("prev").onclick=()=>pageFlip.flipPrev();
-document.getElementById("next").onclick=()=>pageFlip.flipNext();
+function updatePage(index) {
+  currentPage = index;
 
-document.getElementById("mobilePrev").onclick=()=>pageFlip.flipPrev();
-document.getElementById("mobileNext").onclick=()=>pageFlip.flipNext();
+  if (isMobileView()) {
+    pageText.innerText = `Page ${index + 1} / ${TOTAL_PAGES}`;
+  } else {
+    if (index === 0) {
+      pageText.innerText = `Cover`;
+    } else {
+      const start = index;
+      const end = Math.min(index + 1, TOTAL_PAGES - 1);
+      pageText.innerText = `Pages ${start} - ${end}`;
+    }
+  }
 
-/* INIT */
-renderPages();
-renderThumbs();
-initFlip();
+  updateThumbActive(index);
+}
 
+function renderPages() {
+  book.innerHTML = "";
+  pageImages.forEach((src) => {
+    const page = document.createElement("div");
+    page.className = "page";
+    page.innerHTML = `<img src="${src}" alt="Page">`;
+    book.appendChild(page);
+  });
+}
+
+function renderThumbs() {
+  thumbs.innerHTML = "";
+  pageImages.forEach((src, i) => {
+    const t = document.createElement("div");
+    t.className = "thumb" + (i === currentPage ? " active" : "");
+    t.innerHTML = `<img src="${src}" loading="lazy" alt="Thumbnail ${i + 1}">`;
+    t.onclick = () => {
+      if (pageFlip) pageFlip.flip(i);
+    };
+    thumbs.appendChild(t);
+  });
+}
+
+function setBookSize() {
+  if (isMobileView()) {
+    book.style.width = "560px";
+    book.style.height = "792px";
+  } else {
+    book.style.width = "1120px";
+    book.style.height = "792px";
+  }
+}
+
+function initFlip() {
+  if (pageFlip) {
+    pageFlip.destroy();
+    pageFlip = null;
+  }
+
+  setBookSize();
+
+  pageFlip = new St.PageFlip(book, {
+    width: 560,
+    height: 792,
+    size: "fixed",
+    autoSize: false,
+    usePortrait: true,
+    showCover: false,
+    drawShadow: true,
+    flippingTime: isMobileView() ? 700 : 900,
+    mobileScrollSupport: false,
+    maxShadowOpacity: 0.5
+  });
+
+  pageFlip.loadFromHTML(book.querySelectorAll(".page"));
+
+  pageFlip.on("flip", (e) => {
+    updatePage(e.data);
+  });
+
+  pageFlip.on("init", () => {
+    loading.style.display = "none";
+    updatePage(currentPage);
+    applyTransform();
+  });
+
+  if (currentPage > 0) {
+    pageFlip.flip(currentPage);
+  }
+}
+
+function init() {
+  loading.style.display = "block";
+  renderPages();
+  renderThumbs();
+  initFlip();
+}
+
+/* Desktop buttons */
+document.getElementById("prev").onclick = () => {
+  if (!isMobileView() && pageFlip) pageFlip.flipPrev();
+};
+
+document.getElementById("next").onclick = () => {
+  if (!isMobileView() && pageFlip) pageFlip.flipNext();
+};
+
+document.getElementById("zoomIn").onclick = () => {
+  if (isMobileView()) return;
+  zoomLevel = clamp(zoomLevel + zoomStep, minZoom, maxZoom);
+  applyTransform();
+};
+
+document.getElementById("zoomOut").onclick = () => {
+  if (isMobileView()) return;
+  zoomLevel = clamp(zoomLevel - zoomStep, minZoom, maxZoom);
+  if (!canPan()) resetPosition();
+  applyTransform();
+};
+
+document.getElementById("zoomReset").onclick = () => {
+  if (isMobileView()) return;
+  zoomLevel = defaultZoom;
+  if (rotateDeg % 360 === 0) resetPosition();
+  applyTransform();
+};
+
+document.getElementById("rotateLeft").onclick = () => {
+  if (isMobileView()) return;
+  rotateDeg -= rotateStep;
+  applyTransform();
+};
+
+document.getElementById("rotateRight").onclick = () => {
+  if (isMobileView()) return;
+  rotateDeg += rotateStep;
+  applyTransform();
+};
+
+document.getElementById("rotateReset").onclick = () => {
+  if (isMobileView()) return;
+  rotateDeg = 0;
+  if (!canPan()) resetPosition();
+  applyTransform();
+};
+
+document.getElementById("moveUp").onclick = () => {
+  if (isMobileView()) return;
+  offsetY -= moveStep;
+  applyTransform();
+};
+
+document.getElementById("moveDown").onclick = () => {
+  if (isMobileView()) return;
+  offsetY += moveStep;
+  applyTransform();
+};
+
+viewerMain.addEventListener("wheel", (e) => {
+  if (isMobileView()) return;
+
+  e.preventDefault();
+
+  if (e.deltaY < 0) {
+    zoomLevel = clamp(zoomLevel + zoomStep, minZoom, maxZoom);
+  } else {
+    zoomLevel = clamp(zoomLevel - zoomStep, minZoom, maxZoom);
+  }
+
+  if (!canPan()) resetPosition();
+  applyTransform();
+}, { passive: false });
+
+viewerMain.addEventListener("touchstart", (e) => {
+  if (isMobileView()) return;
+
+  if (e.touches.length === 2) {
+    pinchStartDistance = getTouchDistance(e.touches[0], e.touches[1]);
+    pinchStartZoom = zoomLevel;
+    isDragging = false;
+    return;
+  }
+
+  if (e.touches.length === 1 && canPan()) {
+    isDragging = true;
+    dragStartX = e.touches[0].clientX;
+    dragStartY = e.touches[0].clientY;
+    startOffsetX = offsetX;
+    startOffsetY = offsetY;
+  }
+}, { passive: false });
+
+viewerMain.addEventListener("touchmove", (e) => {
+  if (isMobileView()) return;
+
+  if (e.touches.length === 2) {
+    e.preventDefault();
+
+    const currentDistance = getTouchDistance(e.touches[0], e.touches[1]);
+    if (pinchStartDistance > 0) {
+      const scaleFactor = currentDistance / pinchStartDistance;
+      zoomLevel = clamp(pinchStartZoom * scaleFactor, minZoom, maxZoom);
+
+      if (!canPan()) resetPosition();
+      applyTransform();
+    }
+    return;
+  }
+
+  if (e.touches.length === 1 && isDragging && canPan()) {
+    e.preventDefault();
+    offsetX = startOffsetX + (e.touches[0].clientX - dragStartX);
+    offsetY = startOffsetY + (e.touches[0].clientY - dragStartY);
+    applyTransform();
+  }
+}, { passive: false });
+
+viewerMain.addEventListener("touchend", () => {
+  if (isMobileView()) return;
+  isDragging = false;
+  pinchStartDistance = 0;
+});
+
+let resizeTimeout;
+window.onresize = () => {
+  clearTimeout(resizeTimeout);
+  resizeTimeout = setTimeout(() => {
+    init();
+  }, 250);
+};
+
+init();
 </script>
 
 </body>
