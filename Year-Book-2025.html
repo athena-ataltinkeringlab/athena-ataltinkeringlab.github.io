@@ -183,6 +183,10 @@ body {
   z-index: 5;
 }
 
+#desktopHint {
+  display: none;
+}
+
 @media (max-width:768px) {
   body {
     overflow: hidden;
@@ -213,16 +217,12 @@ body {
   }
 
   .page-info {
-    display: block;
-    text-align: center;
-    font-size: 12px;
-    border-radius: 10px;
-    margin-bottom: 8px;
+    display: none !important;
   }
 
   .viewer {
     grid-template-columns: 1fr;
-    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-rows: minmax(0, 1fr) auto auto;
     gap: 8px;
     height: calc(100vh - 118px);
   }
@@ -252,6 +252,18 @@ body {
 
   .thumb.active {
     transform: none !important;
+  }
+
+  #desktopHint {
+    display: block;
+    position: static;
+    width: 100%;
+    text-align: center;
+    font-size: 11px;
+    color: rgba(255,255,255,0.6);
+    pointer-events: none;
+    margin-top: 2px;
+    padding-bottom: 2px;
   }
 }
 </style>
@@ -301,6 +313,8 @@ body {
     </div>
 
     <div class="thumbs" id="thumbs"></div>
+
+    <div id="desktopHint">For better viewing experience, use desktop view</div>
   </div>
 </div>
 
@@ -456,7 +470,13 @@ function updatePage(index) {
   if (isMobileView()) {
     pageText.innerText = `Page ${index + 1} / ${TOTAL_PAGES}`;
   } else {
-    pageText.innerText = `Pages ${index + 1} - ${Math.min(index + 2, TOTAL_PAGES)}`;
+    if (index === 0) {
+      pageText.innerText = "Cover";
+    } else {
+      const start = index;
+      const end = Math.min(index + 1, TOTAL_PAGES - 1);
+      pageText.innerText = `Pages ${start} - ${end}`;
+    }
   }
 
   updateThumbActive(index);
@@ -615,7 +635,6 @@ viewerMain.addEventListener("wheel", (e) => {
   applyTransform();
 }, { passive: false });
 
-/* Desktop touch only */
 viewerMain.addEventListener("touchstart", (e) => {
   if (isMobileView()) return;
 
