@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Athena Global School Yearbook 2025-26</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: white;
+  overflow: hidden;
+}
+
+.app {
+  padding: 10px;
+  height: 100vh;
+  box-sizing: border-box;
+}
+
+/* TOPBAR */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: blur(16px);
+  padding: 6px 10px;
+  border-radius: 8px;
+  margin-bottom: 6px;
+}
+
+.title-center {
+  flex: 1;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* BUTTONS */
+.nav-group,
+.zoom-group,
+.move-group {
+  display: flex;
+  gap: 6px;
+}
+
+.btn {
+  padding: 4px 10px;
+  background: linear-gradient(45deg,#3b82f6,#9333ea);
+  border: none;
+  color: white;
+  border-radius: 999px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+/* MOBILE NOTE */
+.mobile-note {
+  display: none;
+}
+
+/* PAGE CONTROL BAR */
+.page-info-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.page-mini-btn {
+  display: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(45deg,#3b82f6,#9333ea);
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+/* VIEWER */
+.viewer {
+  display: grid;
+  grid-template-columns: 1fr 150px;
+  gap: 10px;
+  height: calc(100vh - 120px);
+}
+
+.main {
+  position: relative;
+  background: rgba(255,255,255,0.06);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.book-center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.book-transform {
+  transform: scale(0.8);
+}
+
+#book {
+  width: 1120px;
+  height: 792px;
+}
+
+/* THUMBS */
+.thumbs {
+  overflow: auto;
+  background: rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 8px;
+}
+
+.thumb {
+  margin-bottom: 6px;
+  cursor: pointer;
+}
+
+.thumb img {
+  width: 100%;
+  aspect-ratio: 1/1.414;
+}
+
+/* MOBILE */
+@media (max-width:768px) {
+
+  .nav-group,
+  .zoom-group,
+  .move-group {
+    display: none;
+  }
+
+  .mobile-note {
+    display: block;
+    text-align: center;
+    font-size: 11px;
+    background: rgba(255,255,255,0.1);
+    padding: 6px;
+    border-radius: 10px;
+    margin-bottom: 6px;
+  }
+
+  .page-mini-btn {
+    display: inline-block;
+  }
+
+  .viewer {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+    height: calc(100vh - 160px);
+  }
+
+  #book {
+    width: 560px;
+    height: 792px;
+  }
+
+  .book-transform {
+    transform: scale(0.65);
+  }
+
+  .thumbs {
+    white-space: nowrap;
+    overflow-x: auto;
+  }
+
+  .thumb {
+    display: inline-block;
+    width: 60px;
+    margin-right: 6px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <div class="topbar">
+    <div class="nav-group">
+      <button class="btn" id="prev">‹ Prev</button>
+      <button class="btn" id="next">Next ›</button>
+    </div>
+
+    <div class="title-center">
+      Athena Global School Yearbook 2025-26
+    </div>
+  </div>
+
+  <!-- MOBILE NOTE -->
+  <div class="mobile-note">
+    Best viewed on desktop
+  </div>
+
+  <!-- PAGE BUTTONS -->
+  <div class="page-info-wrap">
+    <button class="page-mini-btn" id="mobilePrev">‹</button>
+    <button class="page-mini-btn" id="mobileNext">›</button>
+  </div>
+
+  <div class="viewer">
+    <div class="main">
+      <div class="book-center">
+        <div class="book-transform">
+          <div id="book"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="thumbs" id="thumbs"></div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.min.js"></script>
+
+<script>
+let pageFlip;
+const book = document.getElementById("book");
+const thumbs = document.getElementById("thumbs");
+
+const TOTAL = 136;
+
+/* LOAD PAGES */
+function renderPages() {
+  book.innerHTML = "";
+  for (let i=1;i<=TOTAL;i++){
+    const p=document.createElement("div");
+    p.className="page";
+    p.innerHTML=`<img src="assets/images/Img/${i}.jpg">`;
+    book.appendChild(p);
+  }
+}
+
+/* THUMBS */
+function renderThumbs(){
+  thumbs.innerHTML="";
+  for(let i=0;i<TOTAL;i++){
+    const t=document.createElement("div");
+    t.className="thumb";
+    t.innerHTML=`<img src="assets/images/Img/${i+1}.jpg">`;
+    t.onclick=()=>pageFlip.flip(i);
+    thumbs.appendChild(t);
+  }
+}
+
+/* INIT FLIP */
+function initFlip(){
+  if(pageFlip) pageFlip.destroy();
+
+  pageFlip=new St.PageFlip(book,{
+    width:560,
+    height:792,
+    size:"fixed",
+    showCover:false,
+    usePortrait:true
+  });
+
+  pageFlip.loadFromHTML(book.children);
+}
+
+/* NAV */
+document.getElementById("prev").onclick=()=>pageFlip.flipPrev();
+document.getElementById("next").onclick=()=>pageFlip.flipNext();
+
+document.getElementById("mobilePrev").onclick=()=>pageFlip.flipPrev();
+document.getElementById("mobileNext").onclick=()=>pageFlip.flipNext();
+
+/* INIT */
+renderPages();
+renderThumbs();
+initFlip();
+
+</script>
+
+</body>
+</html>
