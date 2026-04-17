@@ -20,21 +20,19 @@ body {
   box-sizing: border-box;
 }
 
-/* Compact single-line topbar with title and buttons */
 .topbar {
   display: flex;
-  align-items: center;           /* vertical center single line [web:28][web:20] */
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
   background: rgba(255,255,255,0.1);
   backdrop-filter: blur(16px);
-  padding: 6px 10px;             /* small height */
+  padding: 6px 10px;
   border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.35);
   margin-bottom: 6px;
 }
 
-/* Left and right button groups */
 .nav-group,
 .zoom-group {
   display: flex;
@@ -42,9 +40,8 @@ body {
   gap: 6px;
 }
 
-/* Centered title in the same line */
 .title-center {
-  flex: 1;                       /* takes remaining space */
+  flex: 1;
   text-align: center;
   font-size: 14px;
   font-weight: 600;
@@ -62,7 +59,7 @@ body {
   cursor: pointer;
   border-radius: 999px;
   font-weight: 600;
-  font-size: 11px;              /* smaller */
+  font-size: 11px;
   transition: all 0.2s;
   box-shadow: 0 3px 10px rgba(59,130,246,0.4);
   white-space: nowrap;
@@ -73,7 +70,6 @@ body {
   box-shadow: 0 6px 18px rgba(59,130,246,0.5);
 }
 
-/* Small page info below header */
 .page-info {
   font-size: 12px;
   font-weight: 600;
@@ -84,7 +80,6 @@ body {
   margin-bottom: 6px;
 }
 
-/* Layout */
 .viewer {
   display: grid;
   grid-template-columns: 1fr 150px;
@@ -102,15 +97,20 @@ body {
   box-shadow: 0 16px 32px rgba(0,0,0,0.4);
   position: relative;
   overflow: hidden;
+  touch-action: none;
+  cursor: grab;
 }
 
-/* Zoom wrapper */
+.main.dragging {
+  cursor: grabbing;
+}
+
 .book-wrapper {
   transform-origin: center center;
-  transition: transform 0.25s ease;
+  transition: transform 0.12s ease;
+  will-change: transform;
 }
 
-/* Flipbook size (adjust here if needed) */
 #book {
   width: 1120px;
   height: 792px;
@@ -126,10 +126,9 @@ body {
 .page img {
   width: 100%;
   height: 100%;
-  object-fit: contain;          /* show full image, no crop [web:9] */
+  object-fit: contain;
 }
 
-/* Thumbnails */
 .thumbs {
   overflow: auto;
   background: rgba(255,255,255,0.08);
@@ -159,7 +158,6 @@ body {
   transform: scale(1.03);
 }
 
-/* Loading */
 .loading {
   position: absolute;
   top: 50%;
@@ -169,7 +167,6 @@ body {
   color: rgba(255,255,255,0.7);
 }
 
-/* Mobile */
 @media (max-width:768px) {
   .viewer {
     grid-template-columns: 1fr;
@@ -178,7 +175,7 @@ body {
   }
 
   .topbar {
-    flex-wrap: wrap;            /* allow wrap on very small screens */
+    flex-wrap: wrap;
     row-gap: 4px;
   }
 
@@ -194,6 +191,8 @@ body {
 
   .zoom-group {
     order: 2;
+    flex-wrap: wrap;
+    justify-content: center;
   }
 }
 </style>
@@ -201,8 +200,6 @@ body {
 <body>
 
 <div class="app">
-
-  <!-- Compact header: nav + title + zoom in one line -->
   <div class="topbar">
     <div class="nav-group">
       <button class="btn" id="prev">‹ Prev</button>
@@ -217,13 +214,17 @@ body {
       <button class="btn" id="zoomOut">−</button>
       <button class="btn" id="zoomReset">80%</button>
       <button class="btn" id="zoomIn">+</button>
+
+      <button class="btn" id="rotateLeft">⟲</button>
+      <button class="btn" id="rotateReset">0°</button>
+      <button class="btn" id="rotateRight">⟳</button>
     </div>
   </div>
 
   <div class="page-info" id="pageText">Pages 1 - 2</div>
 
   <div class="viewer">
-    <div class="main">
+    <div class="main" id="viewerMain">
       <div class="loading" id="loading">Loading...</div>
       <div class="book-wrapper" id="bookWrapper">
         <div id="book"></div>
@@ -243,6 +244,7 @@ const thumbs = document.getElementById("thumbs");
 const pageText = document.getElementById("pageText");
 const loading = document.getElementById("loading");
 const bookWrapper = document.getElementById("bookWrapper");
+const viewerMain = document.getElementById("viewerMain");
 
 const TOTAL_PAGES = 136;
 const pageImages = [];
@@ -252,38 +254,166 @@ for (let i = 1; i <= TOTAL_PAGES; i++) {
 
 let currentPage = 0;
 
-/* Zoom state – default 80% */
-let zoomLevel = 0.8;       // default 80% zoom
+let zoomLevel = 0.8;
+const defaultZoom = 0.8;
 const minZoom = 0.5;
-const maxZoom = 2.0;
-const zoomStep = 0.1;
+const maxZoom = 2.5;
+const zoomStep = 0.05;
 
-function applyZoom() {
-  bookWrapper.style.transform = `scale(${zoomLevel})`;
+let rotateDeg = 0;
+const rotateStep = 90;
+
+let offsetX = 0;
+let offsetY = 0;
+
+let isDragging = false;
+let dragStartX = 0;
+let dragStartY = 0;
+let startOffsetX = 0;
+let startOffsetY = 0;
+
+let pinchStartDistance = 0;
+let pinchStartZoom = zoomLevel;
+let pinchStartOffsetX = 0;
+let pinchStartOffsetY = 0;
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function getTouchDistance(touch1, touch2) {
+  const dx = touch2.clientX - touch1.clientX;
+  const dy = touch2.clientY - touch1.clientY;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+function applyTransform() {
+  bookWrapper.style.transform =
+    `translate(${offsetX}px, ${offsetY}px) scale(${zoomLevel}) rotate(${rotateDeg}deg)`;
+
   document.getElementById("zoomReset").innerText = Math.round(zoomLevel * 100) + "%";
+  document.getElementById("rotateReset").innerText = `${rotateDeg}°`;
+}
+
+function resetPosition() {
+  offsetX = 0;
+  offsetY = 0;
 }
 
 document.getElementById("zoomIn").onclick = () => {
-  zoomLevel = Math.min(maxZoom, zoomLevel + zoomStep);
-  applyZoom();
+  zoomLevel = clamp(zoomLevel + zoomStep, minZoom, maxZoom);
+  applyTransform();
 };
 
 document.getElementById("zoomOut").onclick = () => {
-  zoomLevel = Math.max(minZoom, zoomLevel - zoomStep);
-  applyZoom();
+  zoomLevel = clamp(zoomLevel - zoomStep, minZoom, maxZoom);
+  if (zoomLevel <= defaultZoom) resetPosition();
+  applyTransform();
 };
 
 document.getElementById("zoomReset").onclick = () => {
-  zoomLevel = 0.8;   // reset back to 80%
-  applyZoom();
+  zoomLevel = defaultZoom;
+  resetPosition();
+  applyTransform();
 };
+
+document.getElementById("rotateLeft").onclick = () => {
+  rotateDeg -= rotateStep;
+  applyTransform();
+};
+
+document.getElementById("rotateRight").onclick = () => {
+  rotateDeg += rotateStep;
+  applyTransform();
+};
+
+document.getElementById("rotateReset").onclick = () => {
+  rotateDeg = 0;
+  applyTransform();
+};
+
+viewerMain.addEventListener("wheel", (e) => {
+  e.preventDefault();
+
+  if (e.deltaY < 0) {
+    zoomLevel = clamp(zoomLevel + zoomStep, minZoom, maxZoom);
+  } else {
+    zoomLevel = clamp(zoomLevel - zoomStep, minZoom, maxZoom);
+    if (zoomLevel <= defaultZoom) resetPosition();
+  }
+
+  applyTransform();
+}, { passive: false });
+
+viewerMain.addEventListener("mousedown", (e) => {
+  if (zoomLevel <= defaultZoom) return;
+  isDragging = true;
+  viewerMain.classList.add("dragging");
+  dragStartX = e.clientX;
+  dragStartY = e.clientY;
+  startOffsetX = offsetX;
+  startOffsetY = offsetY;
+});
+
+window.addEventListener("mousemove", (e) => {
+  if (!isDragging) return;
+  offsetX = startOffsetX + (e.clientX - dragStartX);
+  offsetY = startOffsetY + (e.clientY - dragStartY);
+  applyTransform();
+});
+
+window.addEventListener("mouseup", () => {
+  isDragging = false;
+  viewerMain.classList.remove("dragging");
+});
+
+viewerMain.addEventListener("touchstart", (e) => {
+  if (e.touches.length === 2) {
+    pinchStartDistance = getTouchDistance(e.touches[0], e.touches[1]);
+    pinchStartZoom = zoomLevel;
+    pinchStartOffsetX = offsetX;
+    pinchStartOffsetY = offsetY;
+    isDragging = false;
+  } else if (e.touches.length === 1 && zoomLevel > defaultZoom) {
+    isDragging = true;
+    dragStartX = e.touches[0].clientX;
+    dragStartY = e.touches[0].clientY;
+    startOffsetX = offsetX;
+    startOffsetY = offsetY;
+  }
+}, { passive: false });
+
+viewerMain.addEventListener("touchmove", (e) => {
+  if (e.touches.length === 2) {
+    e.preventDefault();
+    const currentDistance = getTouchDistance(e.touches[0], e.touches[1]);
+
+    if (pinchStartDistance > 0) {
+      const scaleFactor = currentDistance / pinchStartDistance;
+      zoomLevel = clamp(pinchStartZoom * scaleFactor, minZoom, maxZoom);
+      applyTransform();
+    }
+  } else if (e.touches.length === 1 && isDragging && zoomLevel > defaultZoom) {
+    e.preventDefault();
+    offsetX = startOffsetX + (e.touches[0].clientX - dragStartX);
+    offsetY = startOffsetY + (e.touches[0].clientY - dragStartY);
+    applyTransform();
+  }
+}, { passive: false });
+
+viewerMain.addEventListener("touchend", (e) => {
+  if (e.touches.length < 2) pinchStartDistance = 0;
+  if (e.touches.length === 0) isDragging = false;
+  if (zoomLevel <= defaultZoom) resetPosition();
+  applyTransform();
+});
 
 function renderPages() {
   book.innerHTML = "";
   pageImages.forEach((src) => {
     const page = document.createElement("div");
     page.className = "page";
-    page.innerHTML = `<img src="${src}">`;
+    page.innerHTML = `<img src="${src}" alt="Page">`;
     book.appendChild(page);
   });
 }
@@ -293,16 +423,15 @@ function renderThumbs() {
   pageImages.forEach((src, i) => {
     const t = document.createElement("div");
     t.className = "thumb" + (i === 0 ? " active" : "");
-    t.innerHTML = `<img src="${src}" loading="lazy">`;
+    t.innerHTML = `<img src="${src}" loading="lazy" alt="Thumbnail ${i + 1}">`;
     t.onclick = () => {
       pageFlip.flip(i);
-      updateThumbActive(i); // extra call for instant highlight
+      updateThumbActive(i);
     };
     thumbs.appendChild(t);
   });
 }
 
-/* Highlight and scroll active thumbnail into view */
 function updateThumbActive(index) {
   const allThumbs = document.querySelectorAll(".thumb");
   allThumbs.forEach((thumb, i) => {
@@ -315,7 +444,7 @@ function updateThumbActive(index) {
       behavior: "smooth",
       block: "nearest",
       inline: "nearest"
-    }); // scrolls inside .thumbs container [web:46][web:50][web:53]
+    });
   }
 }
 
@@ -335,18 +464,19 @@ function initFlip() {
   pageFlip = new St.PageFlip(book, {
     width: 560,
     height: 792,
-    size: "fixed",      // keep large double-page layout [web:1][web:54]
+    size: "fixed",
     autoSize: false,
     usePortrait: true,
     showCover: false,
     drawShadow: true,
-    flippingTime: 900
+    flippingTime: 900,
+    mobileScrollSupport: false
   });
 
   pageFlip.loadFromHTML(book.querySelectorAll(".page"));
 
   pageFlip.on("flip", (e) => {
-    updatePage(e.data);   // sync text + thumbnail + scroll
+    updatePage(e.data);
   });
 
   pageFlip.on("init", () => {
@@ -362,11 +492,9 @@ function init() {
   initFlip();
 }
 
-/* Navigation buttons */
 document.getElementById("prev").onclick = () => pageFlip && pageFlip.flipPrev();
 document.getElementById("next").onclick = () => pageFlip && pageFlip.flipNext();
 
-/* Resize: keep page index and zoom */
 let resizeTimeout;
 window.onresize = () => {
   clearTimeout(resizeTimeout);
@@ -374,12 +502,12 @@ window.onresize = () => {
     const page = pageFlip ? pageFlip.getCurrentPageIndex() : 0;
     init();
     if (pageFlip) pageFlip.flip(page);
-    applyZoom();
+    applyTransform();
   }, 250);
 };
 
 init();
-applyZoom();   // apply 80% zoom on load [web:37][web:38]
+applyTransform();
 </script>
 
 </body>
