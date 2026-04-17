@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Athena Global School Yearbook 2025-26</title>
 
 <style>
@@ -34,7 +34,8 @@ body {
 }
 
 .nav-group,
-.zoom-group {
+.zoom-group,
+.move-group {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -88,24 +89,33 @@ body {
 }
 
 .main {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  position: relative;
   background: rgba(255,255,255,0.06);
   backdrop-filter: blur(16px);
   border-radius: 12px;
   box-shadow: 0 16px 32px rgba(0,0,0,0.4);
-  position: relative;
   overflow: hidden;
   touch-action: none;
-  cursor: grab;
+  cursor: default;
 }
 
-.main.dragging {
-  cursor: grabbing;
+/* Layer 1: always centered */
+.book-center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
 }
 
-.book-wrapper {
+/* Layer 2: pan only */
+.book-pan {
+  transform: translate(0px, 0px);
+  will-change: transform;
+}
+
+/* Layer 3: zoom + rotate only */
+.book-transform {
+  transform: scale(0.8) rotate(0deg);
   transform-origin: center center;
   transition: transform 0.12s ease;
   will-change: transform;
@@ -114,7 +124,7 @@ body {
 #book {
   width: 1120px;
   height: 792px;
-  max-width: 100%;
+  max-width: none;
 }
 
 .page {
@@ -165,34 +175,75 @@ body {
   transform: translate(-50%, -50%);
   font-size: 16px;
   color: rgba(255,255,255,0.7);
+  z-index: 5;
 }
 
 @media (max-width:768px) {
+  body {
+    overflow: hidden;
+  }
+
+  .app {
+    padding: 8px;
+  }
+
   .viewer {
     grid-template-columns: 1fr;
     gap: 8px;
-    height: calc(100vh - 90px);
+    height: calc(100vh - 118px);
   }
 
   .topbar {
     flex-wrap: wrap;
-    row-gap: 4px;
+    row-gap: 6px;
+    justify-content: center;
   }
 
   .title-center {
     order: 1;
     flex-basis: 100%;
     text-align: center;
+    font-size: 13px;
   }
 
   .nav-group {
     order: 0;
+    justify-content: center;
+    flex-wrap: wrap;
   }
 
   .zoom-group {
     order: 2;
-    flex-wrap: wrap;
     justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .move-group {
+    order: 3;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    font-size: 10px;
+    padding: 6px 10px;
+  }
+
+  .thumbs {
+    display: block;
+    max-height: 115px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    padding: 6px;
+  }
+
+  .thumb {
+    display: inline-block;
+    width: 62px;
+    margin-right: 6px;
+    margin-bottom: 0;
+    vertical-align: top;
   }
 }
 </style>
@@ -219,6 +270,11 @@ body {
       <button class="btn" id="rotateReset">0°</button>
       <button class="btn" id="rotateRight">⟳</button>
     </div>
+
+    <div class="move-group">
+      <button class="btn" id="moveUp">↑ Up</button>
+      <button class="btn" id="moveDown">↓ Down</button>
+    </div>
   </div>
 
   <div class="page-info" id="pageText">Pages 1 - 2</div>
@@ -226,8 +282,13 @@ body {
   <div class="viewer">
     <div class="main" id="viewerMain">
       <div class="loading" id="loading">Loading...</div>
-      <div class="book-wrapper" id="bookWrapper">
-        <div id="book"></div>
+
+      <div class="book-center">
+        <div class="book-pan" id="bookPan">
+          <div class="book-transform" id="bookTransform">
+            <div id="book"></div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -239,60 +300,62 @@ body {
 
 <script>
 let pageFlip;
+
 const book = document.getElementById("book");
 const thumbs = document.getElementById("thumbs");
 const pageText = document.getElementById("pageText");
 const loading = document.getElementById("loading");
-const bookWrapper = document.getElementById("bookWrapper");
 const viewerMain = document.getElementById("viewerMain");
+const bookPan = document.getElementById("bookPan");
+const bookTransform = document.getElementById("bookTransform");
 
 const TOTAL_PAGES = 136;
 const pageImages = [];
 for (let i = 1; i <= TOTAL_PAGES; i++) {
-  pageImages.push(`assets/images/Img/${i}.jpg`);
+  pageImages.push(`Img/${i}.jpg`);
 }
 
 let currentPage = 0;
 
+/* Zoom */
 let zoomLevel = 0.8;
 const defaultZoom = 0.8;
 const minZoom = 0.5;
-const maxZoom = 2.5;
+const maxZoom = 2;
 const zoomStep = 0.05;
 
+/* Rotate */
 let rotateDeg = 0;
 const rotateStep = 90;
 
+/* Pan */
 let offsetX = 0;
 let offsetY = 0;
-
 let isDragging = false;
 let dragStartX = 0;
 let dragStartY = 0;
 let startOffsetX = 0;
 let startOffsetY = 0;
 
+/* Pinch */
 let pinchStartDistance = 0;
 let pinchStartZoom = zoomLevel;
-let pinchStartOffsetX = 0;
-let pinchStartOffsetY = 0;
+
+/* Button move */
+const moveStep = 40;
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
-function getTouchDistance(touch1, touch2) {
-  const dx = touch2.clientX - touch1.clientX;
-  const dy = touch2.clientY - touch1.clientY;
+function getTouchDistance(t1, t2) {
+  const dx = t2.clientX - t1.clientX;
+  const dy = t2.clientY - t1.clientY;
   return Math.sqrt(dx * dx + dy * dy);
 }
 
-function applyTransform() {
-  bookWrapper.style.transform =
-    `translate(${offsetX}px, ${offsetY}px) scale(${zoomLevel}) rotate(${rotateDeg}deg)`;
-
-  document.getElementById("zoomReset").innerText = Math.round(zoomLevel * 100) + "%";
-  document.getElementById("rotateReset").innerText = `${rotateDeg}°`;
+function canPan() {
+  return zoomLevel > defaultZoom + 0.01 || rotateDeg % 360 !== 0;
 }
 
 function resetPosition() {
@@ -300,6 +363,41 @@ function resetPosition() {
   offsetY = 0;
 }
 
+function getEffectiveSize() {
+  const normalizedRotate = ((rotateDeg % 360) + 360) % 360;
+  const quarterTurns = normalizedRotate === 90 || normalizedRotate === 270;
+
+  const baseW = 1120 * zoomLevel;
+  const baseH = 792 * zoomLevel;
+
+  if (quarterTurns) {
+    return { width: baseH, height: baseW };
+  }
+  return { width: baseW, height: baseH };
+}
+
+function clampOffsets() {
+  const viewerRect = viewerMain.getBoundingClientRect();
+  const size = getEffectiveSize();
+
+  const maxX = Math.max(0, (size.width - viewerRect.width) / 2);
+  const maxY = Math.max(0, (size.height - viewerRect.height) / 2);
+
+  offsetX = clamp(offsetX, -maxX, maxX);
+  offsetY = clamp(offsetY, -maxY, maxY);
+}
+
+function applyTransform() {
+  clampOffsets();
+
+  bookPan.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+  bookTransform.style.transform = `scale(${zoomLevel}) rotate(${rotateDeg}deg)`;
+
+  document.getElementById("zoomReset").innerText = Math.round(zoomLevel * 100) + "%";
+  document.getElementById("rotateReset").innerText = `${rotateDeg}°`;
+}
+
+/* Buttons */
 document.getElementById("zoomIn").onclick = () => {
   zoomLevel = clamp(zoomLevel + zoomStep, minZoom, maxZoom);
   applyTransform();
@@ -307,13 +405,13 @@ document.getElementById("zoomIn").onclick = () => {
 
 document.getElementById("zoomOut").onclick = () => {
   zoomLevel = clamp(zoomLevel - zoomStep, minZoom, maxZoom);
-  if (zoomLevel <= defaultZoom) resetPosition();
+  if (!canPan()) resetPosition();
   applyTransform();
 };
 
 document.getElementById("zoomReset").onclick = () => {
   zoomLevel = defaultZoom;
-  resetPosition();
+  if (rotateDeg % 360 === 0) resetPosition();
   applyTransform();
 };
 
@@ -329,9 +427,21 @@ document.getElementById("rotateRight").onclick = () => {
 
 document.getElementById("rotateReset").onclick = () => {
   rotateDeg = 0;
+  if (!canPan()) resetPosition();
   applyTransform();
 };
 
+document.getElementById("moveUp").onclick = () => {
+  offsetY -= moveStep;
+  applyTransform();
+};
+
+document.getElementById("moveDown").onclick = () => {
+  offsetY += moveStep;
+  applyTransform();
+};
+
+/* Mouse wheel zoom only */
 viewerMain.addEventListener("wheel", (e) => {
   e.preventDefault();
 
@@ -339,42 +449,22 @@ viewerMain.addEventListener("wheel", (e) => {
     zoomLevel = clamp(zoomLevel + zoomStep, minZoom, maxZoom);
   } else {
     zoomLevel = clamp(zoomLevel - zoomStep, minZoom, maxZoom);
-    if (zoomLevel <= defaultZoom) resetPosition();
   }
 
+  if (!canPan()) resetPosition();
   applyTransform();
 }, { passive: false });
 
-viewerMain.addEventListener("mousedown", (e) => {
-  if (zoomLevel <= defaultZoom) return;
-  isDragging = true;
-  viewerMain.classList.add("dragging");
-  dragStartX = e.clientX;
-  dragStartY = e.clientY;
-  startOffsetX = offsetX;
-  startOffsetY = offsetY;
-});
-
-window.addEventListener("mousemove", (e) => {
-  if (!isDragging) return;
-  offsetX = startOffsetX + (e.clientX - dragStartX);
-  offsetY = startOffsetY + (e.clientY - dragStartY);
-  applyTransform();
-});
-
-window.addEventListener("mouseup", () => {
-  isDragging = false;
-  viewerMain.classList.remove("dragging");
-});
-
+/* Touch */
 viewerMain.addEventListener("touchstart", (e) => {
   if (e.touches.length === 2) {
     pinchStartDistance = getTouchDistance(e.touches[0], e.touches[1]);
     pinchStartZoom = zoomLevel;
-    pinchStartOffsetX = offsetX;
-    pinchStartOffsetY = offsetY;
     isDragging = false;
-  } else if (e.touches.length === 1 && zoomLevel > defaultZoom) {
+    return;
+  }
+
+  if (e.touches.length === 1 && canPan()) {
     isDragging = true;
     dragStartX = e.touches[0].clientX;
     dragStartY = e.touches[0].clientY;
@@ -386,14 +476,19 @@ viewerMain.addEventListener("touchstart", (e) => {
 viewerMain.addEventListener("touchmove", (e) => {
   if (e.touches.length === 2) {
     e.preventDefault();
-    const currentDistance = getTouchDistance(e.touches[0], e.touches[1]);
 
+    const currentDistance = getTouchDistance(e.touches[0], e.touches[1]);
     if (pinchStartDistance > 0) {
       const scaleFactor = currentDistance / pinchStartDistance;
       zoomLevel = clamp(pinchStartZoom * scaleFactor, minZoom, maxZoom);
+
+      if (!canPan()) resetPosition();
       applyTransform();
     }
-  } else if (e.touches.length === 1 && isDragging && zoomLevel > defaultZoom) {
+    return;
+  }
+
+  if (e.touches.length === 1 && isDragging && canPan()) {
     e.preventDefault();
     offsetX = startOffsetX + (e.touches[0].clientX - dragStartX);
     offsetY = startOffsetY + (e.touches[0].clientY - dragStartY);
@@ -401,13 +496,12 @@ viewerMain.addEventListener("touchmove", (e) => {
   }
 }, { passive: false });
 
-viewerMain.addEventListener("touchend", (e) => {
-  if (e.touches.length < 2) pinchStartDistance = 0;
-  if (e.touches.length === 0) isDragging = false;
-  if (zoomLevel <= defaultZoom) resetPosition();
-  applyTransform();
+viewerMain.addEventListener("touchend", () => {
+  isDragging = false;
+  pinchStartDistance = 0;
 });
 
+/* Render pages */
 function renderPages() {
   book.innerHTML = "";
   pageImages.forEach((src) => {
@@ -425,7 +519,7 @@ function renderThumbs() {
     t.className = "thumb" + (i === 0 ? " active" : "");
     t.innerHTML = `<img src="${src}" loading="lazy" alt="Thumbnail ${i + 1}">`;
     t.onclick = () => {
-      pageFlip.flip(i);
+      if (pageFlip) pageFlip.flip(i);
       updateThumbActive(i);
     };
     thumbs.appendChild(t);
@@ -492,9 +586,11 @@ function init() {
   initFlip();
 }
 
+/* Nav */
 document.getElementById("prev").onclick = () => pageFlip && pageFlip.flipPrev();
 document.getElementById("next").onclick = () => pageFlip && pageFlip.flipNext();
 
+/* Resize */
 let resizeTimeout;
 window.onresize = () => {
   clearTimeout(resizeTimeout);
