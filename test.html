@@ -222,7 +222,7 @@ body {
 
   .viewer {
     grid-template-columns: 1fr;
-    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-rows: minmax(0, 1fr) auto auto;
     gap: 8px;
     height: calc(100vh - 118px);
   }
@@ -256,15 +256,14 @@ body {
 
   #desktopHint {
     display: block;
-    position: fixed;
-    bottom: 6px;
-    left: 0;
+    position: static;
     width: 100%;
     text-align: center;
     font-size: 11px;
     color: rgba(255,255,255,0.6);
     pointer-events: none;
-    z-index: 20;
+    margin-top: 2px;
+    padding-bottom: 2px;
   }
 }
 </style>
@@ -314,10 +313,10 @@ body {
     </div>
 
     <div class="thumbs" id="thumbs"></div>
+
+    <div id="desktopHint">For better viewing experience, use desktop view</div>
   </div>
 </div>
-
-<div id="desktopHint">For better viewing experience, use desktop view</div>
 
 <script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.min.js"></script>
 
@@ -335,7 +334,7 @@ const bookTransform = document.getElementById("bookTransform");
 const TOTAL_PAGES = 136;
 const pageImages = [];
 for (let i = 1; i <= TOTAL_PAGES; i++) {
-  pageImages.push(`assets/images/Img/${i}.jpg`);
+  pageImages.push(`Img/${i}.jpg`);
 }
 
 let currentPage = 0;
@@ -472,7 +471,7 @@ function updatePage(index) {
     pageText.innerText = `Page ${index + 1} / ${TOTAL_PAGES}`;
   } else {
     if (index === 0) {
-      pageText.innerText = `Cover`;
+      pageText.innerText = "Cover";
     } else {
       const start = index;
       const end = Math.min(index + 1, TOTAL_PAGES - 1);
