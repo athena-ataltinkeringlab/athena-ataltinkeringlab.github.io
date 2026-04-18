@@ -6,8 +6,9 @@
 <title>Athena Global School Yearbook 2025-26</title>
 
 <style>
-body {
+html, body {
   margin: 0;
+  height: 100%;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
   color: white;
@@ -31,6 +32,7 @@ body {
   gap: 8px;
   background: rgba(255,255,255,0.1);
   backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   padding: 6px 10px;
   border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.35);
@@ -96,6 +98,7 @@ body {
   position: relative;
   background: rgba(255,255,255,0.06);
   backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-radius: 12px;
   box-shadow: 0 16px 32px rgba(0,0,0,0.4);
   overflow: hidden;
@@ -108,36 +111,42 @@ body {
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
+  width: 0;
+  height: 0;
 }
 
 .book-pan {
-  transform: translate3d(0px, 0px, 0);
+  transform: translate3d(0, 0, 0);
   will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 .book-transform {
   transform: translateZ(0) scale(0.8) rotate(0deg);
   transform-origin: center center;
-  transition: none;
+  transition: transform 0.18s ease;
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 #book {
   width: 1120px;
   height: 792px;
   max-width: none;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 .page {
   background: #ffffff;
   border-radius: 6px;
   overflow: hidden;
-  position: relative;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 .page img {
@@ -147,23 +156,16 @@ body {
   display: block;
   user-select: none;
   -webkit-user-drag: none;
-}
-
-.page-loading {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #334155;
-  font-size: 14px;
-  background: #fff;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 .thumbs {
   overflow: auto;
   background: rgba(255,255,255,0.08);
   backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-radius: 12px;
   padding: 8px;
   box-shadow: 0 10px 24px rgba(0,0,0,0.35);
@@ -176,7 +178,6 @@ body {
   overflow: hidden;
   transition: all 0.15s;
   box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-  background: rgba(255,255,255,0.08);
 }
 
 .thumb img {
@@ -193,68 +194,49 @@ body {
 
 .loading {
   position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: min(360px, calc(100% - 40px));
-  z-index: 10;
-  background: rgba(15, 23, 42, 0.88);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 16px;
-  padding: 18px 16px;
-  box-shadow: 0 12px 30px rgba(0,0,0,0.35);
-  backdrop-filter: blur(12px);
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  background: rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
-.loading-title {
+.loader-box {
+  width: min(360px, 82vw);
+  text-align: center;
+}
+
+.loader-text {
   font-size: 14px;
-  font-weight: 700;
-  text-align: center;
+  color: rgba(255,255,255,0.92);
   margin-bottom: 10px;
-}
-
-.loading-subtext {
-  font-size: 12px;
-  text-align: center;
-  color: rgba(255,255,255,0.72);
-  margin-top: 8px;
+  font-weight: 600;
 }
 
 .progress-wrap {
   width: 100%;
-  height: 12px;
-  background: rgba(255,255,255,0.12);
+  height: 10px;
+  background: rgba(255,255,255,0.14);
   border-radius: 999px;
   overflow: hidden;
+  box-shadow: inset 0 1px 4px rgba(0,0,0,0.3);
 }
 
 .progress-bar {
-  height: 100%;
   width: 0%;
+  height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, #3b82f6, #9333ea);
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
   transition: width 0.2s ease;
 }
 
-.progress-text {
-  text-align: center;
-  font-size: 12px;
-  font-weight: 600;
+.progress-label {
   margin-top: 8px;
-}
-
-.bg-status {
-  position: absolute;
-  right: 12px;
-  bottom: 12px;
-  background: rgba(15, 23, 42, 0.82);
-  border: 1px solid rgba(255,255,255,0.12);
-  color: rgba(255,255,255,0.85);
-  font-size: 11px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  z-index: 6;
-  display: none;
+  font-size: 12px;
+  color: rgba(255,255,255,0.72);
 }
 
 #desktopHint {
@@ -305,10 +287,6 @@ body {
     min-height: 0;
   }
 
-  .book-center {
-    padding: 20px 14px 14px;
-  }
-
   .thumbs {
     display: block;
     max-height: 110px;
@@ -342,53 +320,6 @@ body {
     pointer-events: none;
     margin-top: 2px;
     padding-bottom: 2px;
-  }
-
-  .book-pan,
-  .book-transform,
-  #book,
-  .page,
-  .page img,
-  .stf__parent,
-  .stf__wrapper,
-  .stf__block,
-  .stf__item,
-  .stf__page {
-    backface-visibility: hidden !important;
-    -webkit-backface-visibility: hidden !important;
-    -webkit-font-smoothing: antialiased;
-  }
-
-  .book-pan {
-    transform: translate3d(0px, 0px, 0);
-  }
-
-  .book-transform {
-    transition: none !important;
-    will-change: auto !important;
-    transform-origin: center center;
-    transform-style: preserve-3d;
-    -webkit-transform-style: preserve-3d;
-  }
-
-  .stf__parent,
-  .stf__wrapper,
-  .stf__block,
-  .stf__item,
-  .stf__page {
-    transform-style: preserve-3d !important;
-    -webkit-transform-style: preserve-3d !important;
-  }
-
-  .page img {
-    image-rendering: auto;
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
-  }
-
-  .loading {
-    width: min(320px, calc(100% - 26px));
-    top: 46%;
   }
 }
 </style>
@@ -427,15 +358,14 @@ body {
   <div class="viewer">
     <div class="main" id="viewerMain">
       <div class="loading" id="loading">
-        <div class="loading-title">Loading yearbook</div>
-        <div class="progress-wrap">
-          <div class="progress-bar" id="progressBar"></div>
+        <div class="loader-box">
+          <div class="loader-text" id="loadingText">Loading book...</div>
+          <div class="progress-wrap">
+            <div class="progress-bar" id="progressBar"></div>
+          </div>
+          <div class="progress-label" id="progressLabel">0%</div>
         </div>
-        <div class="progress-text" id="progressText">0 / 10</div>
-        <div class="loading-subtext" id="loadingSubtext">Preparing first pages...</div>
       </div>
-
-      <div class="bg-status" id="bgStatus">Loading remaining pages...</div>
 
       <div class="book-center">
         <div class="book-pan" id="bookPan">
@@ -461,25 +391,21 @@ const book = document.getElementById("book");
 const thumbs = document.getElementById("thumbs");
 const pageText = document.getElementById("pageText");
 const loading = document.getElementById("loading");
+const loadingText = document.getElementById("loadingText");
+const progressBar = document.getElementById("progressBar");
+const progressLabel = document.getElementById("progressLabel");
 const viewerMain = document.getElementById("viewerMain");
 const bookPan = document.getElementById("bookPan");
 const bookTransform = document.getElementById("bookTransform");
-const progressBar = document.getElementById("progressBar");
-const progressText = document.getElementById("progressText");
-const loadingSubtext = document.getElementById("loadingSubtext");
-const bgStatus = document.getElementById("bgStatus");
 
 const TOTAL_PAGES = 136;
-const INITIAL_LOAD_COUNT = 10;
 const pageImages = [];
 for (let i = 1; i <= TOTAL_PAGES; i++) {
   pageImages.push(`assets/images/Img/${i}.jpg`);
 }
 
 let currentPage = 0;
-let isFlippingNow = false;
 
-/* Desktop controls */
 let zoomLevel = 0.8;
 const defaultZoom = 0.8;
 const minZoom = 0.5;
@@ -502,9 +428,10 @@ let pinchStartZoom = zoomLevel;
 
 const moveStep = 40;
 
-const preloadedBookImages = new Map();
-const pageImgElements = [];
-const thumbImgElements = [];
+let initializedPages = false;
+let thumbsRendered = false;
+let lastMobileMode = isMobileView();
+let flipReady = false;
 
 function isMobileView() {
   return window.innerWidth <= 768;
@@ -566,8 +493,8 @@ function clampOffsets() {
 
 function getMobileFitScale() {
   const rect = viewerMain.getBoundingClientRect();
-  const padX = 28;
-  const padY = 28;
+  const padX = 24;
+  const padY = 24;
   const availableW = Math.max(120, rect.width - padX);
   const availableH = Math.max(120, rect.height - padY);
   const baseW = 560;
@@ -579,15 +506,13 @@ function getMobileFitScale() {
 function applyTransform() {
   if (isMobileView()) {
     const mobileScale = getMobileFitScale();
-    const safeScale = Math.round(mobileScale * 1000) / 1000;
-
-    bookPan.style.transform = `translate3d(0px, 0px, 0)`;
-    bookTransform.style.transform = `translateZ(0) scale(${safeScale}) rotate(${rotateDeg}deg)`;
+    bookPan.style.transform = `translate3d(0px, 0px, 0px)`;
+    bookTransform.style.transform = `translateZ(0) scale(${mobileScale}) rotate(0deg)`;
     return;
   }
 
   clampOffsets();
-  bookPan.style.transform = `translate3d(${offsetX}px, ${offsetY}px, 0)`;
+  bookPan.style.transform = `translate3d(${offsetX}px, ${offsetY}px, 0px)`;
   bookTransform.style.transform = `translateZ(0) scale(${zoomLevel}) rotate(${rotateDeg}deg)`;
 
   document.getElementById("zoomReset").innerText = Math.round(zoomLevel * 100) + "%";
@@ -628,124 +553,98 @@ function updatePage(index) {
   updateThumbActive(index);
 }
 
-function updateProgress(loaded, total, text) {
-  const percent = total > 0 ? (loaded / total) * 100 : 0;
-  progressBar.style.width = `${percent}%`;
-  progressText.textContent = `${loaded} / ${total}`;
-  if (text) loadingSubtext.textContent = text;
+function updateProgress(done, total, text = "Loading book...") {
+  const percent = total > 0 ? Math.round((done / total) * 100) : 0;
+  loadingText.textContent = text;
+  progressBar.style.width = percent + "%";
+  progressLabel.textContent = percent + "%";
 }
 
-function loadImageWithRetry(src, retries = 3, delay = 350) {
-  return new Promise((resolve) => {
-    let attempt = 0;
+function createPageElement(src, index) {
+  const page = document.createElement("div");
+  page.className = "page";
 
-    function tryLoad() {
-      const img = new Image();
-      img.decoding = "async";
-      img.loading = "eager";
-
-      img.onload = () => resolve({ ok: true, img, src });
-      img.onerror = () => {
-        attempt++;
-        if (attempt <= retries) {
-          setTimeout(tryLoad, delay * attempt);
-        } else {
-          resolve({ ok: false, img: null, src });
-        }
-      };
-
-      img.src = src + (src.includes("?") ? "&" : "?") + "v=" + Date.now() + "_" + attempt;
-    }
-
-    tryLoad();
-  });
-}
-
-async function preloadInitialPages() {
-  preloadedBookImages.clear();
-  updateProgress(0, INITIAL_LOAD_COUNT, "Preparing first pages...");
-
-  for (let i = 0; i < INITIAL_LOAD_COUNT; i++) {
-    const src = pageImages[i];
-    const result = await loadImageWithRetry(src, 3, 300);
-
-    if (result.ok) {
-      preloadedBookImages.set(src, result.img.src);
-    } else {
-      preloadedBookImages.set(src, src);
-    }
-
-    updateProgress(i + 1, INITIAL_LOAD_COUNT, "Loading first 10 pages...");
+  const img = document.createElement("img");
+  img.alt = `Page ${index + 1}`;
+  img.draggable = false;
+  img.decoding = "async";
+  img.loading = index < 10 ? "eager" : "lazy";
+  if ("fetchPriority" in img) {
+    img.fetchPriority = index < 6 ? "high" : "auto";
   }
+  img.src = src;
+
+  page.appendChild(img);
+  return page;
 }
 
 function renderPages() {
+  if (initializedPages) return;
   book.innerHTML = "";
-  pageImgElements.length = 0;
-
   pageImages.forEach((src, i) => {
-    const page = document.createElement("div");
-    page.className = "page";
-
-    const holder = document.createElement("div");
-    holder.className = "page-loading";
-    holder.textContent = i < INITIAL_LOAD_COUNT ? `Loading page ${i + 1}...` : `Preparing page ${i + 1}...`;
-
-    const img = document.createElement("img");
-    img.alt = `Page ${i + 1}`;
-    img.loading = i < INITIAL_LOAD_COUNT ? "eager" : "lazy";
-    img.decoding = i < INITIAL_LOAD_COUNT ? "sync" : "async";
-    img.draggable = false;
-    img.dataset.pageIndex = i;
-
-    img.onload = () => {
-      holder.style.display = "none";
-    };
-
-    img.onerror = () => {
-      holder.style.display = "flex";
-      holder.textContent = `Reloading page ${i + 1}...`;
-      setTimeout(() => {
-        img.src = src + (src.includes("?") ? "&" : "?") + "retry=" + Date.now();
-      }, 400);
-    };
-
-    if (preloadedBookImages.has(src)) {
-      img.src = preloadedBookImages.get(src);
-    }
-
-    page.appendChild(holder);
-    page.appendChild(img);
-    book.appendChild(page);
-    pageImgElements.push(img);
+    book.appendChild(createPageElement(src, i));
   });
+  initializedPages = true;
 }
 
 function renderThumbs() {
+  if (thumbsRendered) return;
   thumbs.innerHTML = "";
-  thumbImgElements.length = 0;
-
   pageImages.forEach((src, i) => {
     const t = document.createElement("div");
     t.className = "thumb" + (i === currentPage ? " active" : "");
 
-    const thumbImg = document.createElement("img");
-    thumbImg.alt = `Thumbnail ${i + 1}`;
-    thumbImg.loading = i < 20 ? "eager" : "lazy";
-    thumbImg.src = preloadedBookImages.get(src) || src;
+    const img = document.createElement("img");
+    img.src = src;
+    img.alt = `Thumbnail ${i + 1}`;
+    img.loading = "lazy";
+    img.decoding = "async";
 
-    thumbImg.onerror = () => {
-      thumbImg.src = src + (src.includes("?") ? "&" : "?") + "thumbretry=" + Date.now();
-    };
-
-    t.appendChild(thumbImg);
+    t.appendChild(img);
     t.onclick = () => {
-      if (pageFlip) pageFlip.flip(i);
+      if (pageFlip && flipReady) pageFlip.flip(i);
     };
 
     thumbs.appendChild(t);
-    thumbImgElements.push(thumbImg);
   });
+  thumbsRendered = true;
+}
+
+function preloadImage(src) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.decoding = "async";
+
+    const done = () => resolve(true);
+    img.onload = done;
+    img.onerror = done;
+    img.src = src;
+
+    if (img.complete) {
+      resolve(true);
+    }
+  });
+}
+
+async function preloadCriticalPages() {
+  const firstBatch = pageImages.slice(0, 10);
+
+  for (let i = 0; i < firstBatch.length; i++) {
+    await preloadImage(firstBatch[i]);
+    updateProgress(i + 1, firstBatch.length, "Loading first pages...");
+  }
+}
+
+async function warmRemainingPagesInBackground() {
+  const rest = pageImages.slice(10);
+  const total = rest.length;
+
+  for (let i = 0; i < total; i++) {
+    preloadImage(rest[i]);
+    if ((i + 1) % 12 === 0 || i === total - 1) {
+      await new Promise(resolve => setTimeout(resolve, 0));
+    }
+  }
 }
 
 function setBookSize() {
@@ -758,12 +657,18 @@ function setBookSize() {
   }
 }
 
-function initFlip() {
+function destroyFlip() {
   if (pageFlip) {
-    pageFlip.destroy();
+    try {
+      pageFlip.destroy();
+    } catch (e) {}
     pageFlip = null;
   }
+  flipReady = false;
+}
 
+function initFlip() {
+  destroyFlip();
   setBookSize();
 
   pageFlip = new St.PageFlip(book, {
@@ -773,97 +678,58 @@ function initFlip() {
     autoSize: false,
     usePortrait: true,
     showCover: false,
-    drawShadow: true,
-    flippingTime: isMobileView() ? 420 : 900,
+    drawShadow: !isMobileView(),
+    flippingTime: isMobileView() ? 520 : 850,
     mobileScrollSupport: false,
-    maxShadowOpacity: isMobileView() ? 0.12 : 0.5
+    maxShadowOpacity: isMobileView() ? 0 : 0.35,
+    useMouseEvents: !isMobileView(),
+    swipeDistance: 30,
+    clickEventForward: true
   });
 
   pageFlip.loadFromHTML(book.querySelectorAll(".page"));
 
-  pageFlip.on("changeState", (e) => {
-    isFlippingNow = e.data === "flipping";
-
-    if (isMobileView() && isFlippingNow) {
-      bookTransform.style.transition = "none";
-    }
-  });
-
   pageFlip.on("flip", (e) => {
-    isFlippingNow = false;
     updatePage(e.data);
-    applyTransform();
   });
 
   pageFlip.on("init", () => {
+    flipReady = true;
     loading.style.display = "none";
     updatePage(currentPage);
     applyTransform();
   });
 
   if (currentPage > 0) {
-    pageFlip.flip(currentPage);
+    setTimeout(() => {
+      if (pageFlip && flipReady) pageFlip.flip(currentPage);
+    }, 40);
+  } else {
+    applyTransform();
   }
-}
-
-async function loadRemainingPagesInBackground() {
-  bgStatus.style.display = "block";
-
-  let loadedCount = INITIAL_LOAD_COUNT;
-
-  for (let i = INITIAL_LOAD_COUNT; i < pageImages.length; i++) {
-    const src = pageImages[i];
-
-    if (!preloadedBookImages.has(src)) {
-      const result = await loadImageWithRetry(src, 3, 250);
-
-      if (result.ok) {
-        preloadedBookImages.set(src, result.img.src);
-      } else {
-        preloadedBookImages.set(src, src);
-      }
-    }
-
-    if (pageImgElements[i] && !pageImgElements[i].src) {
-      pageImgElements[i].src = preloadedBookImages.get(src) || src;
-    }
-
-    if (thumbImgElements[i] && !thumbImgElements[i].src) {
-      thumbImgElements[i].src = preloadedBookImages.get(src) || src;
-    }
-
-    loadedCount++;
-    bgStatus.textContent = `Loading remaining pages... ${loadedCount} / ${TOTAL_PAGES}`;
-
-    if ((i + 1) % 4 === 0) {
-      await new Promise(resolve => setTimeout(resolve, 20));
-    }
-  }
-
-  bgStatus.textContent = "All pages loaded";
-  setTimeout(() => {
-    bgStatus.style.display = "none";
-  }, 1500);
 }
 
 async function init() {
-  loading.style.display = "block";
-  bgStatus.style.display = "none";
+  loading.style.display = "flex";
+  updateProgress(0, 10, "Preparing book...");
 
-  await preloadInitialPages();
   renderPages();
   renderThumbs();
+
+  await preloadCriticalPages();
+  updateProgress(10, 10, "Starting viewer...");
+
   initFlip();
-  loadRemainingPagesInBackground();
+  warmRemainingPagesInBackground();
 }
 
 /* Desktop buttons */
 document.getElementById("prev").onclick = () => {
-  if (!isMobileView() && pageFlip) pageFlip.flipPrev();
+  if (!isMobileView() && pageFlip && flipReady) pageFlip.flipPrev();
 };
 
 document.getElementById("next").onclick = () => {
-  if (!isMobileView() && pageFlip) pageFlip.flipNext();
+  if (!isMobileView() && pageFlip && flipReady) pageFlip.flipNext();
 };
 
 document.getElementById("zoomIn").onclick = () => {
@@ -961,7 +827,6 @@ viewerMain.addEventListener("touchmove", (e) => {
     if (pinchStartDistance > 0) {
       const scaleFactor = currentDistance / pinchStartDistance;
       zoomLevel = clamp(pinchStartZoom * scaleFactor, minZoom, maxZoom);
-
       if (!canPan()) resetPosition();
       applyTransform();
     }
@@ -983,12 +848,36 @@ viewerMain.addEventListener("touchend", () => {
 });
 
 let resizeTimeout;
-window.onresize = () => {
+window.addEventListener("resize", () => {
   clearTimeout(resizeTimeout);
   resizeTimeout = setTimeout(() => {
-    init();
+    const newMobileMode = isMobileView();
+
+    if (newMobileMode !== lastMobileMode) {
+      lastMobileMode = newMobileMode;
+      initFlip();
+    } else {
+      applyTransform();
+    }
   }, 250);
-};
+});
+
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) {
+    setTimeout(() => {
+      applyTransform();
+      if (pageFlip && flipReady) {
+        const savedPage = currentPage;
+        initFlip();
+        setTimeout(() => {
+          if (pageFlip && flipReady && savedPage > 0) {
+            pageFlip.flip(savedPage);
+          }
+        }, 80);
+      }
+    }, 80);
+  }
+});
 
 init();
 </script>
