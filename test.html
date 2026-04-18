@@ -23,6 +23,8 @@ html, body {
   padding: 10px;
   height: 100vh;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
 }
 
 .topbar {
@@ -37,6 +39,7 @@ html, body {
   border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.35);
   margin-bottom: 6px;
+  flex-shrink: 0;
 }
 
 .nav-group,
@@ -85,13 +88,15 @@ html, body {
   border-radius: 999px;
   display: inline-block;
   margin-bottom: 6px;
+  flex-shrink: 0;
 }
 
 .viewer {
   display: grid;
   grid-template-columns: 1fr 150px;
   gap: 10px;
-  height: calc(100vh - 76px);
+  flex: 1;
+  min-height: 0;
 }
 
 .main {
@@ -102,8 +107,12 @@ html, body {
   border-radius: 12px;
   box-shadow: 0 16px 32px rgba(0,0,0,0.4);
   overflow: hidden;
-  touch-action: pan-y;
+  touch-action: none;
   cursor: default;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .book-center {
@@ -111,8 +120,6 @@ html, body {
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 0;
-  height: 0;
 }
 
 .book-pan {
@@ -120,6 +127,7 @@ html, body {
   will-change: transform;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+  pointer-events: none;
 }
 
 .book-transform {
@@ -129,6 +137,7 @@ html, body {
   will-change: transform;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+  pointer-events: none;
 }
 
 #book {
@@ -138,6 +147,7 @@ html, body {
   transform: translateZ(0);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+  pointer-events: auto;
 }
 
 .page {
@@ -159,6 +169,7 @@ html, body {
   transform: translateZ(0);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+  pointer-events: none;
 }
 
 .thumbs {
@@ -280,7 +291,7 @@ html, body {
     grid-template-columns: 1fr;
     grid-template-rows: minmax(0, 1fr) auto auto;
     gap: 8px;
-    height: calc(100vh - 118px);
+    min-height: 0;
   }
 
   .main {
@@ -456,7 +467,7 @@ function getTouchDistance(t1, t2) {
 }
 
 function canPan() {
-  return zoomLevel > defaultZoom + 0.01 || rotateDeg % 360 !== 0;
+  return !isMobileView() && (zoomLevel > defaultZoom + 0.01 || rotateDeg % 360 !== 0);
 }
 
 function resetPosition() {
@@ -493,14 +504,14 @@ function clampOffsets() {
 
 function getMobileFitScale() {
   const rect = viewerMain.getBoundingClientRect();
-  const padX = 24;
-  const padY = 24;
+  const padX = 36;
+  const padY = 36;
   const availableW = Math.max(120, rect.width - padX);
   const availableH = Math.max(120, rect.height - padY);
   const baseW = 560;
   const baseH = 792;
 
-  return Math.min(availableW / baseW, availableH / baseH);
+  return Math.min(availableW / baseW, availableH / baseH, 1);
 }
 
 function applyTransform() {
@@ -614,15 +625,11 @@ function preloadImage(src) {
   return new Promise((resolve) => {
     const img = new Image();
     img.decoding = "async";
-
     const done = () => resolve(true);
     img.onload = done;
     img.onerror = done;
     img.src = src;
-
-    if (img.complete) {
-      resolve(true);
-    }
+    if (img.complete) resolve(true);
   });
 }
 
@@ -682,9 +689,9 @@ function initFlip() {
     flippingTime: isMobileView() ? 520 : 850,
     mobileScrollSupport: false,
     maxShadowOpacity: isMobileView() ? 0 : 0.35,
-    useMouseEvents: !isMobileView(),
-    swipeDistance: 30,
-    clickEventForward: true
+    useMouseEvents: true,
+    swipeDistance: 18,
+    clickEventForward: false
   });
 
   pageFlip.loadFromHTML(book.querySelectorAll(".page"));
@@ -723,7 +730,6 @@ async function init() {
   warmRemainingPagesInBackground();
 }
 
-/* Desktop buttons */
 document.getElementById("prev").onclick = () => {
   if (!isMobileView() && pageFlip && flipReady) pageFlip.flipPrev();
 };
@@ -822,7 +828,6 @@ viewerMain.addEventListener("touchmove", (e) => {
 
   if (e.touches.length === 2) {
     e.preventDefault();
-
     const currentDistance = getTouchDistance(e.touches[0], e.touches[1]);
     if (pinchStartDistance > 0) {
       const scaleFactor = currentDistance / pinchStartDistance;
@@ -852,7 +857,6 @@ window.addEventListener("resize", () => {
   clearTimeout(resizeTimeout);
   resizeTimeout = setTimeout(() => {
     const newMobileMode = isMobileView();
-
     if (newMobileMode !== lastMobileMode) {
       lastMobileMode = newMobileMode;
       initFlip();
