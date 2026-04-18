@@ -17,6 +17,7 @@ html, body {
 
 * {
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .app {
@@ -107,7 +108,7 @@ html, body {
   border-radius: 12px;
   box-shadow: 0 16px 32px rgba(0,0,0,0.4);
   overflow: hidden;
-  touch-action: none;
+  touch-action: pan-x;
   cursor: default;
   min-height: 0;
   display: flex;
@@ -120,6 +121,8 @@ html, body {
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
+  width: fit-content;
+  height: fit-content;
 }
 
 .book-pan {
@@ -148,6 +151,7 @@ html, body {
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   pointer-events: auto;
+  touch-action: pan-x;
 }
 
 .page {
@@ -157,6 +161,7 @@ html, body {
   transform: translateZ(0);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+  touch-action: pan-x;
 }
 
 .page img {
@@ -170,6 +175,7 @@ html, body {
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   pointer-events: none;
+  touch-action: pan-x;
 }
 
 .thumbs {
@@ -193,7 +199,7 @@ html, body {
 
 .thumb img {
   width: 100%;
-  aspect-ratio: 1/1.414;
+  aspect-ratio: 1 / 1.414;
   object-fit: cover;
   display: block;
 }
@@ -254,10 +260,6 @@ html, body {
   display: none;
 }
 
-.mobile-controls {
-  display: none;
-}
-
 .mobile-page-row {
   display: none;
 }
@@ -304,17 +306,18 @@ html, body {
 
   .main {
     min-height: 0;
+    touch-action: pan-x;
+  }
+
+  #book,
+  .page,
+  .page img {
+    touch-action: pan-x;
   }
 
   .mobile-page-row {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 10px;
-  }
-
-  .mobile-controls {
-    display: flex;
     justify-content: center;
     gap: 10px;
   }
@@ -736,12 +739,12 @@ function initFlip() {
     usePortrait: true,
     showCover: false,
     drawShadow: !isMobileView(),
-    flippingTime: isMobileView() ? 700 : 850,
-    mobileScrollSupport: false,
+    flippingTime: isMobileView() ? 760 : 850,
+    mobileScrollSupport: true,
     maxShadowOpacity: isMobileView() ? 0 : 0.35,
     useMouseEvents: true,
-    swipeDistance: isMobileView() ? 8 : 18,
-    clickEventForward: true
+    swipeDistance: isMobileView() ? 4 : 18,
+    clickEventForward: false
   });
 
   pageFlip.loadFromHTML(book.querySelectorAll(".page"));
@@ -937,6 +940,9 @@ document.addEventListener("visibilitychange", () => {
     }, 80);
   }
 });
+
+book.addEventListener("touchstart", () => {}, { passive: true });
+book.addEventListener("touchmove", () => {}, { passive: true });
 
 init();
 </script>
