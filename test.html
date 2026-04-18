@@ -108,7 +108,7 @@ html, body {
   border-radius: 12px;
   box-shadow: 0 16px 32px rgba(0,0,0,0.4);
   overflow: hidden;
-  touch-action: pan-x;
+  touch-action: none;
   cursor: default;
   min-height: 0;
   display: flex;
@@ -151,7 +151,7 @@ html, body {
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   pointer-events: auto;
-  touch-action: pan-x;
+  touch-action: none;
 }
 
 .page {
@@ -161,7 +161,7 @@ html, body {
   transform: translateZ(0);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
-  touch-action: pan-x;
+  touch-action: none;
 }
 
 .page img {
@@ -175,7 +175,7 @@ html, body {
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   pointer-events: none;
-  touch-action: pan-x;
+  touch-action: none;
 }
 
 .thumbs {
@@ -306,13 +306,13 @@ html, body {
 
   .main {
     min-height: 0;
-    touch-action: pan-x;
+    touch-action: none;
   }
 
   #book,
   .page,
   .page img {
-    touch-action: pan-x;
+    touch-action: none;
   }
 
   .mobile-page-row {
@@ -494,6 +494,10 @@ let initializedPages = false;
 let thumbsRendered = false;
 let lastMobileMode = isMobileView();
 let flipReady = false;
+
+let mobileSwipeStartX = 0;
+let mobileSwipeStartY = 0;
+let mobileSwipeTracking = false;
 
 function isMobileView() {
   return window.innerWidth <= 768;
@@ -739,11 +743,11 @@ function initFlip() {
     usePortrait: true,
     showCover: false,
     drawShadow: !isMobileView(),
-    flippingTime: isMobileView() ? 760 : 850,
-    mobileScrollSupport: true,
+    flippingTime: isMobileView() ? 720 : 850,
+    mobileScrollSupport: false,
     maxShadowOpacity: isMobileView() ? 0 : 0.35,
     useMouseEvents: true,
-    swipeDistance: isMobileView() ? 4 : 18,
+    swipeDistance: isMobileView() ? 2 : 18,
     clickEventForward: false
   });
 
@@ -910,6 +914,40 @@ viewerMain.addEventListener("touchend", () => {
   pinchStartDistance = 0;
 });
 
+book.addEventListener("touchstart", (e) => {
+  if (!isMobileView()) return;
+  if (!pageFlip || !flipReady) return;
+  if (e.touches.length !== 1) return;
+
+  mobileSwipeTracking = true;
+  mobileSwipeStartX = e.touches[0].clientX;
+  mobileSwipeStartY = e.touches[0].clientY;
+}, { passive: true });
+
+book.addEventListener("touchend", (e) => {
+  if (!isMobileView()) return;
+  if (!pageFlip || !flipReady) return;
+  if (!mobileSwipeTracking) return;
+  if (!e.changedTouches || !e.changedTouches.length) return;
+
+  const dx = e.changedTouches[0].clientX - mobileSwipeStartX;
+  const dy = e.changedTouches[0].clientY - mobileSwipeStartY;
+
+  mobileSwipeTracking = false;
+
+  if (Math.abs(dx) > 35 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+    if (dx < 0) {
+      pageFlip.flipNext();
+    } else {
+      pageFlip.flipPrev();
+    }
+  }
+}, { passive: true });
+
+book.addEventListener("touchcancel", () => {
+  mobileSwipeTracking = false;
+}, { passive: true });
+
 let resizeTimeout;
 window.addEventListener("resize", () => {
   clearTimeout(resizeTimeout);
@@ -940,9 +978,6 @@ document.addEventListener("visibilitychange", () => {
     }, 80);
   }
 });
-
-book.addEventListener("touchstart", () => {}, { passive: true });
-book.addEventListener("touchmove", () => {}, { passive: true });
 
 init();
 </script>
