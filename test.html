@@ -131,6 +131,7 @@ body {
   background: #ffffff;
   border-radius: 6px;
   overflow: hidden;
+  position: relative;
 }
 
 .page img {
@@ -140,6 +141,17 @@ body {
   display: block;
   user-select: none;
   -webkit-user-drag: none;
+}
+
+.page-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #334155;
+  font-size: 14px;
+  background: #fff;
 }
 
 .thumbs {
@@ -158,6 +170,7 @@ body {
   overflow: hidden;
   transition: all 0.15s;
   box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  background: rgba(255,255,255,0.08);
 }
 
 .thumb img {
@@ -180,6 +193,8 @@ body {
   font-size: 16px;
   color: rgba(255,255,255,0.7);
   z-index: 5;
+  text-align: center;
+  line-height: 1.5;
 }
 
 #desktopHint {
@@ -342,7 +357,7 @@ body {
 
   <div class="viewer">
     <div class="main" id="viewerMain">
-      <div class="loading" id="loading">Loading...</div>
+      <div class="loading" id="loading">Loading yearbook pages...<br>Please wait</div>
 
       <div class="book-center">
         <div class="book-pan" id="bookPan">
@@ -403,6 +418,8 @@ let pinchStartDistance = 0;
 let pinchStartZoom = zoomLevel;
 
 const moveStep = 40;
+
+const preloadedBookImages = new Map();
 
 function isMobileView() {
   return window.innerWidth <= 768;
@@ -526,22 +543,107 @@ function updatePage(index) {
   updateThumbActive(index);
 }
 
+function loadImageWithRetry(src, retries = 3, delay = 350) {
+  return new Promise((resolve) => {
+    let attempt = 0;
+
+    function tryLoad() {
+      const img = new Image();
+      img.decoding = "async";
+      img.loading = "eager";
+
+      img.onload = () => resolve({ ok: true, img, src });
+      img.onerror = () => {
+        attempt++;
+        if (attempt <= retries) {
+          setTimeout(tryLoad, delay * attempt);
+        } else {
+          resolve({ ok: false, img: null, src });
+        }
+      };
+
+      img.src = src + (src.includes("?") ? "&" : "?") + "v=" + Date.now() + "_" + attempt;
+    }
+
+    tryLoad();
+  });
+}
+
+async function preloadBookImages() {
+  loading.style.display = "block";
+  loading.innerHTML = "Loading yearbook pages...<br>Please wait";
+
+  preloadedBookImages.clear();
+
+  const results = [];
+  for (let i = 0; i < pageImages.length; i++) {
+    loading.innerHTML = `Loading yearbook pages...<br>${i + 1} / ${pageImages.length}`;
+    const result = await loadImageWithRetry(pageImages[i], 3, 300);
+    results.push(result);
+
+    if (result.ok) {
+      preloadedBookImages.set(pageImages[i], result.img.src);
+    } else {
+      preloadedBookImages.set(pageImages[i], pageImages[i]);
+    }
+  }
+
+  return results;
+}
+
 function renderPages() {
   book.innerHTML = "";
-  pageImages.forEach((src) => {
+
+  pageImages.forEach((src, i) => {
     const page = document.createElement("div");
     page.className = "page";
-    page.innerHTML = `<img src="${src}" alt="Page">`;
+
+    const holder = document.createElement("div");
+    holder.className = "page-loading";
+    holder.textContent = `Loading page ${i + 1}...`;
+
+    const img = document.createElement("img");
+    img.alt = `Page ${i + 1}`;
+    img.loading = "eager";
+    img.decoding = "sync";
+    img.draggable = false;
+
+    img.onload = () => {
+      holder.style.display = "none";
+    };
+
+    img.onerror = () => {
+      holder.textContent = `Page ${i + 1} failed. Reloading...`;
+      setTimeout(() => {
+        img.src = src + (src.includes("?") ? "&" : "?") + "retry=" + Date.now();
+      }, 400);
+    };
+
+    img.src = preloadedBookImages.get(src) || src;
+
+    page.appendChild(holder);
+    page.appendChild(img);
     book.appendChild(page);
   });
 }
 
 function renderThumbs() {
   thumbs.innerHTML = "";
+
   pageImages.forEach((src, i) => {
     const t = document.createElement("div");
     t.className = "thumb" + (i === currentPage ? " active" : "");
-    t.innerHTML = `<img src="${src}" loading="lazy" alt="Thumbnail ${i + 1}">`;
+
+    const thumbImg = document.createElement("img");
+    thumbImg.alt = `Thumbnail ${i + 1}`;
+    thumbImg.loading = "lazy";
+    thumbImg.src = preloadedBookImages.get(src) || src;
+
+    thumbImg.onerror = () => {
+      thumbImg.src = src + (src.includes("?") ? "&" : "?") + "thumbretry=" + Date.now();
+    };
+
+    t.appendChild(thumbImg);
     t.onclick = () => {
       if (pageFlip) pageFlip.flip(i);
     };
@@ -584,11 +686,8 @@ function initFlip() {
 
   pageFlip.on("changeState", (e) => {
     isFlippingNow = e.data === "flipping";
-
-    if (isMobileView()) {
-      if (isFlippingNow) {
-        bookTransform.style.transition = "none";
-      }
+    if (isMobileView() && isFlippingNow) {
+      bookTransform.style.transition = "none";
     }
   });
 
@@ -609,8 +708,9 @@ function initFlip() {
   }
 }
 
-function init() {
+async function init() {
   loading.style.display = "block";
+  await preloadBookImages();
   renderPages();
   renderThumbs();
   initFlip();
