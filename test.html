@@ -111,15 +111,14 @@ body {
 }
 
 .book-pan {
-  transform: translate(0px, 0px);
+  transform: translate3d(0px, 0px, 0);
   will-change: transform;
 }
 
 .book-transform {
-  transform: scale(0.8) rotate(0deg);
+  transform: translateZ(0) scale(0.8) rotate(0deg);
   transform-origin: center center;
-  transition: transform 0.12s ease;
-  will-change: transform;
+  transition: none;
 }
 
 #book {
@@ -265,6 +264,48 @@ body {
     margin-top: 2px;
     padding-bottom: 2px;
   }
+
+  .book-pan,
+  .book-transform,
+  #book,
+  .page,
+  .page img,
+  .stf__parent,
+  .stf__wrapper,
+  .stf__block,
+  .stf__item,
+  .stf__page {
+    backface-visibility: hidden !important;
+    -webkit-backface-visibility: hidden !important;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .book-pan {
+    transform: translate3d(0px, 0px, 0);
+  }
+
+  .book-transform {
+    transition: none !important;
+    will-change: auto !important;
+    transform-origin: center center;
+    transform-style: preserve-3d;
+    -webkit-transform-style: preserve-3d;
+  }
+
+  .stf__parent,
+  .stf__wrapper,
+  .stf__block,
+  .stf__item,
+  .stf__page {
+    transform-style: preserve-3d !important;
+    -webkit-transform-style: preserve-3d !important;
+  }
+
+  .page img {
+    image-rendering: auto;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
 }
 </style>
 </head>
@@ -338,6 +379,7 @@ for (let i = 1; i <= TOTAL_PAGES; i++) {
 }
 
 let currentPage = 0;
+let isFlippingNow = false;
 
 /* Desktop controls */
 let zoomLevel = 0.8;
@@ -435,14 +477,16 @@ function getMobileFitScale() {
 function applyTransform() {
   if (isMobileView()) {
     const mobileScale = getMobileFitScale();
-    bookPan.style.transform = `translate(0px, 0px)`;
-    bookTransform.style.transform = `scale(${mobileScale}) rotate(0deg)`;
+    const safeScale = Math.round(mobileScale * 1000) / 1000;
+
+    bookPan.style.transform = `translate3d(0px, 0px, 0)`;
+    bookTransform.style.transform = `translateZ(0) scale(${safeScale}) rotate(${rotateDeg}deg)`;
     return;
   }
 
   clampOffsets();
-  bookPan.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
-  bookTransform.style.transform = `scale(${zoomLevel}) rotate(${rotateDeg}deg)`;
+  bookPan.style.transform = `translate3d(${offsetX}px, ${offsetY}px, 0)`;
+  bookTransform.style.transform = `translateZ(0) scale(${zoomLevel}) rotate(${rotateDeg}deg)`;
 
   document.getElementById("zoomReset").innerText = Math.round(zoomLevel * 100) + "%";
   document.getElementById("rotateReset").innerText = `${rotateDeg}°`;
@@ -531,15 +575,27 @@ function initFlip() {
     usePortrait: true,
     showCover: false,
     drawShadow: true,
-    flippingTime: isMobileView() ? 700 : 900,
+    flippingTime: isMobileView() ? 420 : 900,
     mobileScrollSupport: false,
-    maxShadowOpacity: 0.5
+    maxShadowOpacity: isMobileView() ? 0.12 : 0.5
   });
 
   pageFlip.loadFromHTML(book.querySelectorAll(".page"));
 
+  pageFlip.on("changeState", (e) => {
+    isFlippingNow = e.data === "flipping";
+
+    if (isMobileView()) {
+      if (isFlippingNow) {
+        bookTransform.style.transition = "none";
+      }
+    }
+  });
+
   pageFlip.on("flip", (e) => {
+    isFlippingNow = false;
     updatePage(e.data);
+    applyTransform();
   });
 
   pageFlip.on("init", () => {
