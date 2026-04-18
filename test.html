@@ -108,6 +108,12 @@ body {
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
 }
 
 .book-pan {
@@ -187,14 +193,68 @@ body {
 
 .loading {
   position: absolute;
-  top: 50%;
   left: 50%;
+  top: 50%;
   transform: translate(-50%, -50%);
-  font-size: 16px;
-  color: rgba(255,255,255,0.7);
-  z-index: 5;
+  width: min(360px, calc(100% - 40px));
+  z-index: 10;
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 16px;
+  padding: 18px 16px;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+  backdrop-filter: blur(12px);
+}
+
+.loading-title {
+  font-size: 14px;
+  font-weight: 700;
   text-align: center;
-  line-height: 1.5;
+  margin-bottom: 10px;
+}
+
+.loading-subtext {
+  font-size: 12px;
+  text-align: center;
+  color: rgba(255,255,255,0.72);
+  margin-top: 8px;
+}
+
+.progress-wrap {
+  width: 100%;
+  height: 12px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #3b82f6, #9333ea);
+  transition: width 0.2s ease;
+}
+
+.progress-text {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.bg-status {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  background: rgba(15, 23, 42, 0.82);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.85);
+  font-size: 11px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  z-index: 6;
+  display: none;
 }
 
 #desktopHint {
@@ -243,6 +303,10 @@ body {
 
   .main {
     min-height: 0;
+  }
+
+  .book-center {
+    padding: 20px 14px 14px;
   }
 
   .thumbs {
@@ -321,6 +385,11 @@ body {
     transform: translateZ(0);
     -webkit-transform: translateZ(0);
   }
+
+  .loading {
+    width: min(320px, calc(100% - 26px));
+    top: 46%;
+  }
 }
 </style>
 </head>
@@ -357,7 +426,16 @@ body {
 
   <div class="viewer">
     <div class="main" id="viewerMain">
-      <div class="loading" id="loading">Loading yearbook pages...<br>Please wait</div>
+      <div class="loading" id="loading">
+        <div class="loading-title">Loading yearbook</div>
+        <div class="progress-wrap">
+          <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <div class="progress-text" id="progressText">0 / 10</div>
+        <div class="loading-subtext" id="loadingSubtext">Preparing first pages...</div>
+      </div>
+
+      <div class="bg-status" id="bgStatus">Loading remaining pages...</div>
 
       <div class="book-center">
         <div class="book-pan" id="bookPan">
@@ -386,8 +464,13 @@ const loading = document.getElementById("loading");
 const viewerMain = document.getElementById("viewerMain");
 const bookPan = document.getElementById("bookPan");
 const bookTransform = document.getElementById("bookTransform");
+const progressBar = document.getElementById("progressBar");
+const progressText = document.getElementById("progressText");
+const loadingSubtext = document.getElementById("loadingSubtext");
+const bgStatus = document.getElementById("bgStatus");
 
 const TOTAL_PAGES = 136;
+const INITIAL_LOAD_COUNT = 10;
 const pageImages = [];
 for (let i = 1; i <= TOTAL_PAGES; i++) {
   pageImages.push(`assets/images/Img/${i}.jpg`);
@@ -420,6 +503,8 @@ let pinchStartZoom = zoomLevel;
 const moveStep = 40;
 
 const preloadedBookImages = new Map();
+const pageImgElements = [];
+const thumbImgElements = [];
 
 function isMobileView() {
   return window.innerWidth <= 768;
@@ -481,8 +566,8 @@ function clampOffsets() {
 
 function getMobileFitScale() {
   const rect = viewerMain.getBoundingClientRect();
-  const padX = 24;
-  const padY = 24;
+  const padX = 28;
+  const padY = 28;
   const availableW = Math.max(120, rect.width - padX);
   const availableH = Math.max(120, rect.height - padY);
   const baseW = 560;
@@ -543,6 +628,13 @@ function updatePage(index) {
   updateThumbActive(index);
 }
 
+function updateProgress(loaded, total, text) {
+  const percent = total > 0 ? (loaded / total) * 100 : 0;
+  progressBar.style.width = `${percent}%`;
+  progressText.textContent = `${loaded} / ${total}`;
+  if (text) loadingSubtext.textContent = text;
+}
+
 function loadImageWithRetry(src, retries = 3, delay = 350) {
   return new Promise((resolve) => {
     let attempt = 0;
@@ -569,30 +661,27 @@ function loadImageWithRetry(src, retries = 3, delay = 350) {
   });
 }
 
-async function preloadBookImages() {
-  loading.style.display = "block";
-  loading.innerHTML = "Loading yearbook pages...<br>Please wait";
-
+async function preloadInitialPages() {
   preloadedBookImages.clear();
+  updateProgress(0, INITIAL_LOAD_COUNT, "Preparing first pages...");
 
-  const results = [];
-  for (let i = 0; i < pageImages.length; i++) {
-    loading.innerHTML = `Loading yearbook pages...<br>${i + 1} / ${pageImages.length}`;
-    const result = await loadImageWithRetry(pageImages[i], 3, 300);
-    results.push(result);
+  for (let i = 0; i < INITIAL_LOAD_COUNT; i++) {
+    const src = pageImages[i];
+    const result = await loadImageWithRetry(src, 3, 300);
 
     if (result.ok) {
-      preloadedBookImages.set(pageImages[i], result.img.src);
+      preloadedBookImages.set(src, result.img.src);
     } else {
-      preloadedBookImages.set(pageImages[i], pageImages[i]);
+      preloadedBookImages.set(src, src);
     }
-  }
 
-  return results;
+    updateProgress(i + 1, INITIAL_LOAD_COUNT, "Loading first 10 pages...");
+  }
 }
 
 function renderPages() {
   book.innerHTML = "";
+  pageImgElements.length = 0;
 
   pageImages.forEach((src, i) => {
     const page = document.createElement("div");
@@ -600,35 +689,41 @@ function renderPages() {
 
     const holder = document.createElement("div");
     holder.className = "page-loading";
-    holder.textContent = `Loading page ${i + 1}...`;
+    holder.textContent = i < INITIAL_LOAD_COUNT ? `Loading page ${i + 1}...` : `Preparing page ${i + 1}...`;
 
     const img = document.createElement("img");
     img.alt = `Page ${i + 1}`;
-    img.loading = "eager";
-    img.decoding = "sync";
+    img.loading = i < INITIAL_LOAD_COUNT ? "eager" : "lazy";
+    img.decoding = i < INITIAL_LOAD_COUNT ? "sync" : "async";
     img.draggable = false;
+    img.dataset.pageIndex = i;
 
     img.onload = () => {
       holder.style.display = "none";
     };
 
     img.onerror = () => {
-      holder.textContent = `Page ${i + 1} failed. Reloading...`;
+      holder.style.display = "flex";
+      holder.textContent = `Reloading page ${i + 1}...`;
       setTimeout(() => {
         img.src = src + (src.includes("?") ? "&" : "?") + "retry=" + Date.now();
       }, 400);
     };
 
-    img.src = preloadedBookImages.get(src) || src;
+    if (preloadedBookImages.has(src)) {
+      img.src = preloadedBookImages.get(src);
+    }
 
     page.appendChild(holder);
     page.appendChild(img);
     book.appendChild(page);
+    pageImgElements.push(img);
   });
 }
 
 function renderThumbs() {
   thumbs.innerHTML = "";
+  thumbImgElements.length = 0;
 
   pageImages.forEach((src, i) => {
     const t = document.createElement("div");
@@ -636,7 +731,7 @@ function renderThumbs() {
 
     const thumbImg = document.createElement("img");
     thumbImg.alt = `Thumbnail ${i + 1}`;
-    thumbImg.loading = "lazy";
+    thumbImg.loading = i < 20 ? "eager" : "lazy";
     thumbImg.src = preloadedBookImages.get(src) || src;
 
     thumbImg.onerror = () => {
@@ -647,7 +742,9 @@ function renderThumbs() {
     t.onclick = () => {
       if (pageFlip) pageFlip.flip(i);
     };
+
     thumbs.appendChild(t);
+    thumbImgElements.push(thumbImg);
   });
 }
 
@@ -686,6 +783,7 @@ function initFlip() {
 
   pageFlip.on("changeState", (e) => {
     isFlippingNow = e.data === "flipping";
+
     if (isMobileView() && isFlippingNow) {
       bookTransform.style.transition = "none";
     }
@@ -708,12 +806,55 @@ function initFlip() {
   }
 }
 
+async function loadRemainingPagesInBackground() {
+  bgStatus.style.display = "block";
+
+  let loadedCount = INITIAL_LOAD_COUNT;
+
+  for (let i = INITIAL_LOAD_COUNT; i < pageImages.length; i++) {
+    const src = pageImages[i];
+
+    if (!preloadedBookImages.has(src)) {
+      const result = await loadImageWithRetry(src, 3, 250);
+
+      if (result.ok) {
+        preloadedBookImages.set(src, result.img.src);
+      } else {
+        preloadedBookImages.set(src, src);
+      }
+    }
+
+    if (pageImgElements[i] && !pageImgElements[i].src) {
+      pageImgElements[i].src = preloadedBookImages.get(src) || src;
+    }
+
+    if (thumbImgElements[i] && !thumbImgElements[i].src) {
+      thumbImgElements[i].src = preloadedBookImages.get(src) || src;
+    }
+
+    loadedCount++;
+    bgStatus.textContent = `Loading remaining pages... ${loadedCount} / ${TOTAL_PAGES}`;
+
+    if ((i + 1) % 4 === 0) {
+      await new Promise(resolve => setTimeout(resolve, 20));
+    }
+  }
+
+  bgStatus.textContent = "All pages loaded";
+  setTimeout(() => {
+    bgStatus.style.display = "none";
+  }, 1500);
+}
+
 async function init() {
   loading.style.display = "block";
-  await preloadBookImages();
+  bgStatus.style.display = "none";
+
+  await preloadInitialPages();
   renderPages();
   renderThumbs();
   initFlip();
+  loadRemainingPagesInBackground();
 }
 
 /* Desktop buttons */
