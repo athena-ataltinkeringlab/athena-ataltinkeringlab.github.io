@@ -254,6 +254,14 @@ html, body {
   display: none;
 }
 
+.mobile-controls {
+  display: none;
+}
+
+.mobile-page-row {
+  display: none;
+}
+
 @media (max-width:768px) {
   body {
     overflow: hidden;
@@ -289,13 +297,46 @@ html, body {
 
   .viewer {
     grid-template-columns: 1fr;
-    grid-template-rows: minmax(0, 1fr) auto auto;
+    grid-template-rows: minmax(0, 1fr) auto auto auto;
     gap: 8px;
     min-height: 0;
   }
 
   .main {
     min-height: 0;
+  }
+
+  .mobile-page-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .mobile-controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .mobile-btn {
+    padding: 7px 14px;
+    background: linear-gradient(45deg, rgba(59,130,246,0.9), rgba(147,51,234,0.9));
+    border: none;
+    color: white;
+    cursor: pointer;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 12px;
+    box-shadow: 0 3px 10px rgba(59,130,246,0.35);
+  }
+
+  .mobile-page-text {
+    font-size: 12px;
+    font-weight: 600;
+    background: rgba(255,255,255,0.12);
+    padding: 6px 12px;
+    border-radius: 999px;
   }
 
   .thumbs {
@@ -387,6 +428,12 @@ html, body {
       </div>
     </div>
 
+    <div class="mobile-page-row">
+      <button class="mobile-btn" id="mobilePrev">‹ Prev</button>
+      <div class="mobile-page-text" id="mobilePageText">Page 1 / 136</div>
+      <button class="mobile-btn" id="mobileNext">Next ›</button>
+    </div>
+
     <div class="thumbs" id="thumbs"></div>
 
     <div id="desktopHint">For better viewing experience, use desktop view</div>
@@ -401,6 +448,7 @@ let pageFlip;
 const book = document.getElementById("book");
 const thumbs = document.getElementById("thumbs");
 const pageText = document.getElementById("pageText");
+const mobilePageText = document.getElementById("mobilePageText");
 const loading = document.getElementById("loading");
 const loadingText = document.getElementById("loadingText");
 const progressBar = document.getElementById("progressBar");
@@ -550,7 +598,9 @@ function updatePage(index) {
   currentPage = index;
 
   if (isMobileView()) {
-    pageText.innerText = `Page ${index + 1} / ${TOTAL_PAGES}`;
+    const txt = `Page ${index + 1} / ${TOTAL_PAGES}`;
+    pageText.innerText = txt;
+    mobilePageText.innerText = txt;
   } else {
     if (index === 0) {
       pageText.innerText = "Cover";
@@ -686,12 +736,12 @@ function initFlip() {
     usePortrait: true,
     showCover: false,
     drawShadow: !isMobileView(),
-    flippingTime: isMobileView() ? 520 : 850,
+    flippingTime: isMobileView() ? 700 : 850,
     mobileScrollSupport: false,
     maxShadowOpacity: isMobileView() ? 0 : 0.35,
     useMouseEvents: true,
-    swipeDistance: 18,
-    clickEventForward: false
+    swipeDistance: isMobileView() ? 8 : 18,
+    clickEventForward: true
   });
 
   pageFlip.loadFromHTML(book.querySelectorAll(".page"));
@@ -730,13 +780,18 @@ async function init() {
   warmRemainingPagesInBackground();
 }
 
-document.getElementById("prev").onclick = () => {
-  if (!isMobileView() && pageFlip && flipReady) pageFlip.flipPrev();
-};
+function flipPrevPage() {
+  if (pageFlip && flipReady) pageFlip.flipPrev();
+}
 
-document.getElementById("next").onclick = () => {
-  if (!isMobileView() && pageFlip && flipReady) pageFlip.flipNext();
-};
+function flipNextPage() {
+  if (pageFlip && flipReady) pageFlip.flipNext();
+}
+
+document.getElementById("prev").onclick = flipPrevPage;
+document.getElementById("next").onclick = flipNextPage;
+document.getElementById("mobilePrev").onclick = flipPrevPage;
+document.getElementById("mobileNext").onclick = flipNextPage;
 
 document.getElementById("zoomIn").onclick = () => {
   if (isMobileView()) return;
