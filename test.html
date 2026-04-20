@@ -45,8 +45,7 @@ html, body {
 
 .nav-group,
 .zoom-group,
-.move-group,
-.engagement-group {
+.move-group {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -80,37 +79,6 @@ html, body {
 .btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 6px 18px rgba(59,130,246,0.5);
-}
-
-.stat-pill {
-  padding: 6px 12px;
-  background: rgba(255,255,255,0.12);
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.like-btn {
-  padding: 6px 12px;
-  border: none;
-  border-radius: 999px;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
-  color: white;
-  background: linear-gradient(45deg, rgba(236,72,153,0.95), rgba(239,68,68,0.95));
-  box-shadow: 0 3px 10px rgba(239,68,68,0.35);
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.like-btn:hover {
-  transform: translateY(-1px);
-}
-
-.like-btn.liked {
-  background: linear-gradient(45deg, rgba(244,63,94,1), rgba(225,29,72,1));
 }
 
 .page-info {
@@ -308,7 +276,6 @@ html, body {
   .topbar {
     justify-content: center;
     padding: 10px 12px;
-    flex-wrap: wrap;
   }
 
   .title-center {
@@ -318,21 +285,6 @@ html, body {
     font-size: 13px;
     white-space: normal;
     line-height: 1.35;
-    order: 1;
-  }
-
-  .engagement-group {
-    width: 100%;
-    justify-content: center;
-    margin-top: 2px;
-    flex-wrap: wrap;
-    order: 2;
-  }
-
-  .stat-pill,
-  .like-btn {
-    font-size: 11px;
-    padding: 6px 10px;
   }
 
   .nav-group,
@@ -440,11 +392,6 @@ html, body {
       Athena Global School Yearbook 2025-26
     </div>
 
-    <div class="engagement-group">
-      <div class="stat-pill" id="viewerCount">👁 0 Views</div>
-      <button class="like-btn" id="likeBtn">♡ Like <span id="likeCount">0</span></button>
-    </div>
-
     <div class="zoom-group">
       <button class="btn" id="zoomOut">−</button>
       <button class="btn" id="zoomReset">80%</button>
@@ -486,7 +433,7 @@ html, body {
 
     <div class="mobile-page-row">
       <button class="mobile-btn" id="mobilePrev">‹ Prev</button>
-      <div class="mobile-page-text" id="mobilePageText">Page 1 / 136</div>
+      <div class="mobile-page-text" id="mobilePageText">Page 1 / 137</div>
       <button class="mobile-btn" id="mobileNext">Next ›</button>
     </div>
 
@@ -513,7 +460,7 @@ const viewerMain = document.getElementById("viewerMain");
 const bookPan = document.getElementById("bookPan");
 const bookTransform = document.getElementById("bookTransform");
 
-const TOTAL_PAGES = 136;
+const TOTAL_PAGES = 137;
 const pageImages = [];
 for (let i = 1; i <= TOTAL_PAGES; i++) {
   pageImages.push(`assets/images/Img/${i}.jpg`);
@@ -547,58 +494,11 @@ let initializedPages = false;
 let thumbsRendered = false;
 let lastMobileMode = isMobileView();
 let flipReady = false;
+let visibilityRestoreTimer = null;
 
 let mobileSwipeStartX = 0;
 let mobileSwipeStartY = 0;
 let mobileSwipeTracking = false;
-
-const BOOK_ID = "athena-yearbook-2025-26";
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbweg7yokJns6jr2O45wfEh-Cy_3sN7lpaWzNZK8eZT8Ri9dfONaOasavk7NzMWt2-s1/exec";
-
-function getVisitorId() {
-  let visitorId = localStorage.getItem("athena_visitor_id");
-  if (!visitorId) {
-    visitorId = "visitor_" + Math.random().toString(36).slice(2) + "_" + Date.now();
-    localStorage.setItem("athena_visitor_id", visitorId);
-  }
-  return visitorId;
-}
-
-async function apiGetStats() {
-  const url = `${APPS_SCRIPT_URL}?action=getStats&bookId=${encodeURIComponent(BOOK_ID)}`;
-  const res = await fetch(url);
-  return await res.json();
-}
-
-async function apiAddView() {
-  const res = await fetch(APPS_SCRIPT_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "text/plain;charset=utf-8"
-    },
-    body: JSON.stringify({
-      action: "view",
-      bookId: BOOK_ID,
-      visitorId: getVisitorId()
-    })
-  });
-  return await res.json();
-}
-
-async function apiToggleLike() {
-  const res = await fetch(APPS_SCRIPT_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "text/plain;charset=utf-8"
-    },
-    body: JSON.stringify({
-      action: "toggleLike",
-      bookId: BOOK_ID,
-      visitorId: getVisitorId()
-    })
-  });
-  return await res.json();
-}
 
 function isMobileView() {
   return window.innerWidth <= 768;
@@ -874,53 +774,6 @@ function initFlip() {
   }
 }
 
-async function loadStatsFromServer() {
-  try {
-    const stats = await apiGetStats();
-    if (stats.success) {
-      document.getElementById("viewerCount").innerText = `👁 ${stats.views} Views`;
-      document.getElementById("likeBtn").innerHTML = `♡ Like <span id="likeCount">${stats.likes}</span>`;
-      document.getElementById("likeBtn").classList.remove("liked");
-    }
-  } catch (err) {
-    console.error("Stats load failed:", err);
-  }
-}
-
-async function registerViewOnce() {
-  const sessionKey = `${BOOK_ID}_view_sent`;
-  if (sessionStorage.getItem(sessionKey) === "yes") return;
-
-  try {
-    const result = await apiAddView();
-    if (result.success) {
-      document.getElementById("viewerCount").innerText = `👁 ${result.views} Views`;
-      document.getElementById("likeBtn").innerHTML = `♡ Like <span id="likeCount">${result.likes}</span>`;
-      sessionStorage.setItem(sessionKey, "yes");
-    }
-  } catch (err) {
-    console.error("View update failed:", err);
-  }
-}
-
-async function toggleLike() {
-  try {
-    const result = await apiToggleLike();
-    if (result.success) {
-      document.getElementById("viewerCount").innerText = `👁 ${result.views} Views`;
-      document.getElementById("likeBtn").innerHTML = `${result.liked ? "❤ Liked" : "♡ Like"} <span id="likeCount">${result.likes}</span>`;
-      document.getElementById("likeBtn").classList.toggle("liked", result.liked);
-    }
-  } catch (err) {
-    console.error("Like update failed:", err);
-  }
-}
-
-async function initStats() {
-  await loadStatsFromServer();
-  await registerViewOnce();
-}
-
 async function init() {
   loading.style.display = "flex";
   updateProgress(0, 10, "Preparing book...");
@@ -943,11 +796,40 @@ function flipNextPage() {
   if (pageFlip && flipReady) pageFlip.flipNext();
 }
 
+function safelyRestoreFlipbook() {
+  if (document.hidden) return;
+
+  setTimeout(() => {
+    try {
+      applyTransform();
+
+      if (!pageFlip || !flipReady) {
+        initFlip();
+        return;
+      }
+
+      if (typeof pageFlip.update === "function") {
+        pageFlip.update();
+      }
+
+      if (typeof pageFlip.turnToPage === "function") {
+        pageFlip.turnToPage(currentPage);
+      } else if (typeof pageFlip.flip === "function" && currentPage > 0) {
+        pageFlip.flip(currentPage);
+      }
+
+      applyTransform();
+      updatePage(currentPage);
+    } catch (e) {
+      initFlip();
+    }
+  }, 120);
+}
+
 document.getElementById("prev").onclick = flipPrevPage;
 document.getElementById("next").onclick = flipNextPage;
 document.getElementById("mobilePrev").onclick = flipPrevPage;
 document.getElementById("mobileNext").onclick = flipNextPage;
-document.getElementById("likeBtn").onclick = toggleLike;
 
 document.getElementById("zoomIn").onclick = () => {
   if (isMobileView()) return;
@@ -1107,28 +989,27 @@ window.addEventListener("resize", () => {
       initFlip();
     } else {
       applyTransform();
+      safelyRestoreFlipbook();
     }
   }, 250);
 });
 
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) {
-    setTimeout(() => {
-      applyTransform();
-      if (pageFlip && flipReady) {
-        const savedPage = currentPage;
-        initFlip();
-        setTimeout(() => {
-          if (pageFlip && flipReady && savedPage > 0) {
-            pageFlip.flip(savedPage);
-          }
-        }, 80);
-      }
-    }, 80);
+    clearTimeout(visibilityRestoreTimer);
+    visibilityRestoreTimer = setTimeout(() => {
+      safelyRestoreFlipbook();
+    }, 100);
   }
 });
 
-initStats();
+window.addEventListener("focus", () => {
+  clearTimeout(visibilityRestoreTimer);
+  visibilityRestoreTimer = setTimeout(() => {
+    safelyRestoreFlipbook();
+  }, 100);
+});
+
 init();
 </script>
 
