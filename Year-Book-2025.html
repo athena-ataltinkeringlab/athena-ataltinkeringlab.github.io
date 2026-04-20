@@ -494,6 +494,7 @@ let initializedPages = false;
 let thumbsRendered = false;
 let lastMobileMode = isMobileView();
 let flipReady = false;
+let visibilityRestoreTimer = null;
 
 let mobileSwipeStartX = 0;
 let mobileSwipeStartY = 0;
@@ -795,6 +796,36 @@ function flipNextPage() {
   if (pageFlip && flipReady) pageFlip.flipNext();
 }
 
+function safelyRestoreFlipbook() {
+  if (document.hidden) return;
+
+  setTimeout(() => {
+    try {
+      applyTransform();
+
+      if (!pageFlip || !flipReady) {
+        initFlip();
+        return;
+      }
+
+      if (typeof pageFlip.update === "function") {
+        pageFlip.update();
+      }
+
+      if (typeof pageFlip.turnToPage === "function") {
+        pageFlip.turnToPage(currentPage);
+      } else if (typeof pageFlip.flip === "function" && currentPage > 0) {
+        pageFlip.flip(currentPage);
+      }
+
+      applyTransform();
+      updatePage(currentPage);
+    } catch (e) {
+      initFlip();
+    }
+  }, 120);
+}
+
 document.getElementById("prev").onclick = flipPrevPage;
 document.getElementById("next").onclick = flipNextPage;
 document.getElementById("mobilePrev").onclick = flipPrevPage;
@@ -958,25 +989,25 @@ window.addEventListener("resize", () => {
       initFlip();
     } else {
       applyTransform();
+      safelyRestoreFlipbook();
     }
   }, 250);
 });
 
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) {
-    setTimeout(() => {
-      applyTransform();
-      if (pageFlip && flipReady) {
-        const savedPage = currentPage;
-        initFlip();
-        setTimeout(() => {
-          if (pageFlip && flipReady && savedPage > 0) {
-            pageFlip.flip(savedPage);
-          }
-        }, 80);
-      }
-    }, 80);
+    clearTimeout(visibilityRestoreTimer);
+    visibilityRestoreTimer = setTimeout(() => {
+      safelyRestoreFlipbook();
+    }, 100);
   }
+});
+
+window.addEventListener("focus", () => {
+  clearTimeout(visibilityRestoreTimer);
+  visibilityRestoreTimer = setTimeout(() => {
+    safelyRestoreFlipbook();
+  }, 100);
 });
 
 init();
